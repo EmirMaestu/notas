@@ -20,19 +20,21 @@ test('registro, tarea con agregado rápido, detalle, completar y papelera', asyn
   await page.getByLabel('Nueva subtarea').press('Enter');
   await expect(page.getByLabel('Editar subtarea 1')).toHaveValue('Integral');
 
-  page.once('dialog', (d) => d.accept());
-  await page.getByLabel('Mandar a la papelera').click();
+  // Sin confirmación: la fila sale y un toast ofrece «Deshacer».
+  await page.getByRole('button', { name: 'Mandar a la papelera' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Tarea enviada a la papelera' })).toBeVisible();
   await expect(page.getByRole('link', { name: /Comprar pan/ })).toHaveCount(0);
 
   await page.getByRole('link', { name: 'Papelera' }).click();
   await page.getByRole('link', { name: /Comprar pan/ }).click();
-  await page.getByRole('button', { name: 'Restaurar' }).click();
+  await page.getByRole('button', { name: 'Restaurar', exact: true }).click();
   await expect(page.getByRole('link', { name: /Comprar pan/ })).toHaveCount(0);
 
   await page.getByRole('link', { name: 'Hoy', exact: true }).click();
   await page.getByRole('checkbox', { name: /^Completar "/ }).first().click();
-  // esperar a que la tarea figure completada antes de navegar (evita cortar la acción en vuelo)
   await expect(page.getByRole('checkbox', { name: /^Marcar ".*" como pendiente/ })).toBeVisible();
+  // Pasado el margen de 600 ms para deshacer se guarda y la fila sale de Hoy: recién ahí se navega.
+  await expect(page.getByRole('link', { name: /Comprar pan/ })).toHaveCount(0);
   await page.getByRole('link', { name: 'Completadas' }).click();
   await expect(page.getByRole('link', { name: /Comprar pan/ })).toBeVisible();
 

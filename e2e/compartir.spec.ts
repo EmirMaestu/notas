@@ -29,7 +29,7 @@ test('compartir una lista, crear una tarea como miembro, asignarla y salir de la
   await owner.getByRole('link', { name: 'Compras', exact: true }).hover();
   await owner.getByRole('button', { name: 'Editar Compras' }).click();
   await owner.getByLabel('Email del nuevo miembro').fill(memberEmail);
-  await owner.getByRole('button', { name: 'Agregar' }).click();
+  await owner.getByRole('button', { name: 'Invitar' }).click();
   await expect(owner.getByRole('dialog').getByText(memberEmail)).toBeVisible();
   await owner.getByRole('button', { name: 'Cerrar', exact: true }).click();
 
@@ -63,8 +63,8 @@ test('compartir una lista, crear una tarea como miembro, asignarla y salir de la
   // Sale de la lista: deja de verla y la asignación se limpia.
   await member.getByRole('link', { name: 'Compras', exact: true }).hover();
   await member.getByRole('button', { name: 'Miembros de Compras' }).click();
-  member.once('dialog', (d) => d.accept());
   await member.getByRole('button', { name: 'Salir de la lista' }).click();
+  await member.getByRole('alertdialog').getByRole('button', { name: 'Salir de la lista' }).click();
   await expect(member.getByText('Compartidas conmigo')).toHaveCount(0);
   await expect(member.getByRole('link', { name: /Comprar leche/ })).toHaveCount(0);
 

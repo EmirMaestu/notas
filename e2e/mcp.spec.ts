@@ -41,8 +41,8 @@ test('token personal: se crea en Configuración, opera por MCP y se revoca', asy
   await expect(page.getByRole('link', { name: /Desde la IA/ })).toBeVisible();
 
   await page.getByRole('link', { name: 'Configuración' }).click();
-  page.once('dialog', (d) => d.accept());
   await page.getByRole('button', { name: 'Revocar token e2e' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Revocar', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Revocar token e2e' })).toHaveCount(0);
   expect(await mcpStatus(request, token)).toBe(401);
 });
@@ -70,7 +70,7 @@ test('OAuth: registro dinámico, alta con consentimiento, token, MCP, refresh y 
   await page.getByRole('link', { name: 'Registrate' }).click();
   await expect(page).toHaveURL(/\/registro\?next=/);
   await fillRegistration(page, `oauth-${Date.now()}@example.com`);
-  await expect(page.getByRole('heading', { name: 'Cliente e2e quiere acceder a tu cuenta de Notas' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Cliente e2e quiere acceder a tus tareas de Notas' })).toBeVisible();
   await expect(page.getByText('127.0.0.1:4999').first()).toBeVisible();
   await page.getByRole('button', { name: 'Permitir' }).click();
 

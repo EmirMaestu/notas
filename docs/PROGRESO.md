@@ -9,6 +9,7 @@
 | 3 — Compartir | Listas compartidas (`list_members`), asignación (`assignee_id`), vista "Asignadas a mí" | Hecho |
 | 4 — MCP | `/mcp` sin estado (SDK `@modelcontextprotocol/server` 2.3.1), OAuth 2.1 (DCR + PKCE S256 + `resource` + `iss`, rotación de refresh), tokens personales `ntk_`, Configuración → "Conexión con IA" | Hecho |
 | 5 — Despliegue | Docker Compose (app standalone + Postgres 16) detrás de un reverse proxy, migraciones al arrancar, limpieza diaria en el proceso, `/api/health`, backups diarios (14 días), `deploy/deploy.sh` con releases y vuelta atrás automática | Hecho |
+| 6 — Rediseño | Interfaz del rediseño de Claude Design (petróleo, Manrope + Geist Mono), tema claro/oscuro con opción manual, celular con cajón y detalle a pantalla completa, toasts con deshacer, estados vacíos/cargando/error, atajos de teclado, «Creada por IA» (`tasks.created_via`) | Hecho |
 
 ## Cómo desplegar tu propia instancia
 
@@ -33,6 +34,7 @@ Logs: `docker logs --tail 100 notas-app-1`.
 - Importador desde TickTick (`scripts/import-ticktick.ts`, idempotente por `external_id`), pensado para correr contra la base de producción por un túnel SSH.
 - Client ID Metadata Documents (CIMD) y scopes de solo lectura en OAuth.
 - Copia automática de los backups fuera de la VPS y monitoreo externo de `/api/health`.
+- Registrar quién completa o modifica una tarea (`updated_via`) para los toasts «Claude completó…».
 
 ## Notas de desarrollo
 
