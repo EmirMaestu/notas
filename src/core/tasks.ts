@@ -479,22 +479,9 @@ export interface ListTasksFilter {
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 500;
 
-/**
- * Lista tareas de las listas a las que el usuario accede (propias y compartidas con él).
- * "today" y "next7" incluyen vencidas pendientes (como TickTick), se calculan en la zona horaria
- * del usuario y, de las listas compartidas con él, solo traen las asignadas a él.
- * "assigned" trae las asignadas a él en cualquier lista accesible. "inbox" es solo su Bandeja.
- */
-export async function listTasks(db: DB, userId: string, filter: ListTasksFilter = {}): Promise<TaskWithDetails[]> {
+/** Condiciones de `listTasks` y `countTasks` para un filtro (sin orden ni paginado). */
+async function filterConditions(db: DB, userId: string, filter: ListTasksFilter): Promise<SQL[]> {
   const { view } = filter;
-  const limit = filter.limit ?? DEFAULT_LIMIT;
-  const offset = filter.offset ?? 0;
-  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT) {
-    throw new ValidationError(`El límite debe ser un entero entre 1 y ${MAX_LIMIT}`);
-  }
-  if (!Number.isInteger(offset) || offset < 0) {
-    throw new ValidationError('El desplazamiento debe ser un entero mayor o igual a 0');
-  }
   const conditions: SQL[] = [inArray(tasks.listId, accessibleListIds(db, userId))];
 
   conditions.push(view === 'trash' ? isNotNull(tasks.deletedAt) : isNull(tasks.deletedAt));
@@ -530,6 +517,26 @@ export async function listTasks(db: DB, userId: string, filter: ListTasksFilter 
       ),
     );
   }
+  return conditions;
+}
+
+/**
+ * Lista tareas de las listas a las que el usuario accede (propias y compartidas con él).
+ * "today" y "next7" incluyen vencidas pendientes (como TickTick), se calculan en la zona horaria
+ * del usuario y, de las listas compartidas con él, solo traen las asignadas a él.
+ * "assigned" trae las asignadas a él en cualquier lista accesible. "inbox" es solo su Bandeja.
+ */
+export async function listTasks(db: DB, userId: string, filter: ListTasksFilter = {}): Promise<TaskWithDetails[]> {
+  const { view } = filter;
+  const limit = filter.limit ?? DEFAULT_LIMIT;
+  const offset = filter.offset ?? 0;
+  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT) {
+    throw new ValidationError(`El límite debe ser un entero entre 1 y ${MAX_LIMIT}`);
+  }
+  if (!Number.isInteger(offset) || offset < 0) {
+    throw new ValidationError('El desplazamiento debe ser un entero mayor o igual a 0');
+  }
+  const conditions = await filterConditions(db, userId, filter);
 
   const order =
     view === 'completed' ? [desc(tasks.completedAt), asc(tasks.id)]
@@ -545,6 +552,17 @@ export async function listTasks(db: DB, userId: string, filter: ListTasksFilter 
 
   const rows = await db.select().from(tasks).where(and(...conditions)).orderBy(...order).limit(limit).offset(offset);
   return hydrate(db, userId, rows);
+}
+
+/** Cuántas tareas devolvería `listTasks` con este filtro, sin límite. Para los contadores de la barra lateral. */
+export async function countTasks(
+  db: DB, userId: string, filter: Omit<ListTasksFilter, 'limit' | 'offset'> = {},
+): Promise<number> {
+  const [row] = await db
+    .select({ n: sql<number>`count(*)` })
+    .from(tasks)
+    .where(and(...(await filterConditions(db, userId, filter))));
+  return Number(row.n);
 }
 
 export async function searchTasks(

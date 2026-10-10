@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, isNull, ne, sql } from 'drizzle-orm';
-import { folders, listMembers, lists, tasks } from '@/db/schema';
+import { folders, listMembers, lists, tasks, users } from '@/db/schema';
 import type { DB } from '@/db/types';
 import { getAccessibleList, lockList, requireListOwner, type ListRole } from './access';
 import { NotFoundError, ValidationError, isUniqueViolation, isUuid } from './errors';
@@ -108,6 +108,24 @@ export async function listLists(db: DB, userId: string): Promise<ListWithRole[]>
     ...own.map((r) => asSeenBy(r.list, 'owner', Boolean(r.shared))),
     ...sharedWithMe.map((r) => asSeenBy(r.list, 'member', true)),
   ];
+}
+
+/** Datos mínimos del dueño de una lista. */
+export interface ListOwner {
+  id: string;
+  name: string;
+  email: string;
+}
+
+/** Dueño de cada lista compartida con el usuario (id de lista → dueño), para su avatar en la barra lateral. */
+export async function sharedListOwners(db: DB, userId: string): Promise<Record<string, ListOwner>> {
+  const rows = await db
+    .select({ listId: lists.id, id: users.id, name: users.name, email: users.email })
+    .from(listMembers)
+    .innerJoin(lists, eq(lists.id, listMembers.listId))
+    .innerJoin(users, eq(users.id, lists.userId))
+    .where(eq(listMembers.userId, userId));
+  return Object.fromEntries(rows.map(({ listId, ...owner }) => [listId, owner]));
 }
 
 /** Lista a la que el usuario accede (propia o compartida con él); NotFoundError si no. */

@@ -1,62 +1,75 @@
 'use client';
 
-import { Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import type { PublicUser } from '@/core/users';
+import { useMediaQuery } from '@/lib/use-media-query';
+import { ToastProvider } from './toast';
 
-/** Layout responsive: barra lateral fija en escritorio, cajón deslizable en móvil. */
-export function AppShell({ sidebar, children }: { sidebar: React.ReactNode; children: React.ReactNode }) {
+interface ShellContextValue {
+  user: PublicUser;
+  drawerOpen: boolean;
+  openDrawer: () => void;
+}
+
+const ShellContext = createContext<ShellContextValue | null>(null);
+
+/** Usuario actual y control del cajón de celular (para los encabezados de cada página). */
+export function useShell(): ShellContextValue {
+  const value = useContext(ShellContext);
+  if (!value) throw new Error('useShell solo funciona dentro de AppShell');
+  return value;
+}
+
+/** Layout responsive: barra lateral fija en escritorio, cajón deslizable de 300 px en celular. */
+export function AppShell({ user, sidebar, children }: { user: PublicUser; sidebar: React.ReactNode; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  // Arranca en `true` (igual que el render del servidor) y se corrige tras montar, para no desajustar la hidratación.
-  const [isDesktop, setIsDesktop] = useState(true);
+  // En el servidor y al hidratar se asume escritorio (como antes); después se corrige.
+  const isDesktop = useMediaQuery('(min-width: 768px)', true);
   const pathname = usePathname();
   const asideRef = useRef<HTMLElement>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => setOpen(false), [pathname]);
 
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)');
-    const sync = () => setIsDesktop(mq.matches);
-    sync();
-    mq.addEventListener('change', sync);
-    return () => mq.removeEventListener('change', sync);
+  const openDrawer = useCallback(() => {
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setOpen(true);
+  }, []);
+  const closeDrawer = useCallback(() => {
+    setOpen(false);
+    openerRef.current?.focus();
   }, []);
 
   useEffect(() => {
     if (!open) return;
     asideRef.current?.querySelector('a')?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || document.querySelector('[aria-modal="true"]')) return; // el diálogo abierto atiende su propio Escape
-      setOpen(false);
-      menuButtonRef.current?.focus();
+      // El diálogo abierto atiende su propio Escape.
+      if (e.key !== 'Escape' || document.querySelector('[aria-modal="true"]')) return;
+      closeDrawer();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
+  }, [open, closeDrawer]);
+
+  const shell = useMemo(() => ({ user, drawerOpen: open, openDrawer }), [user, open, openDrawer]);
 
   return (
-    <div className="flex h-dvh overflow-hidden">
-      <aside
-        id="app-drawer" ref={asideRef} inert={!open && !isDesktop}
-        onClick={(e) => { if ((e.target as Element).closest('a')) setOpen(false); }}
-        className={`fixed inset-y-0 left-0 z-40 w-72 border-r border-line bg-sidebar transition-transform md:static md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
-      >
-        {sidebar}
-      </aside>
-      {open && <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setOpen(false)} />}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-2 border-b border-line px-3 py-2 md:hidden">
-          <button
-            ref={menuButtonRef} onClick={() => setOpen(true)} aria-label="Abrir menú"
-            aria-expanded={open} aria-controls="app-drawer" className="rounded p-2 hover:bg-hover"
+    <ShellContext.Provider value={shell}>
+      <ToastProvider>
+        <div className="flex h-dvh overflow-hidden bg-bg">
+          <aside
+            id="app-drawer" ref={asideRef} inert={!open && !isDesktop}
+            onClick={(e) => { if ((e.target as Element).closest('a')) setOpen(false); }}
+            className={`fixed inset-y-0 left-0 z-40 w-[300px] bg-sidebar transition-transform duration-280 ease-out md:static md:w-[248px] md:shrink-0 md:translate-x-0 md:border-r md:border-line md:shadow-none ${open ? 'translate-x-0 shadow-pop' : '-translate-x-full'}`}
           >
-            <Menu size={20} />
-          </button>
-          <span className="font-semibold">Notas</span>
-        </header>
-        <main className="min-h-0 flex-1">{children}</main>
-      </div>
-    </div>
+            {sidebar}
+          </aside>
+          {open && <div className="fixed inset-0 z-30 animate-fade-in bg-scrim md:hidden" onClick={closeDrawer} />}
+          <main className="min-h-0 min-w-0 flex-1">{children}</main>
+        </div>
+      </ToastProvider>
+    </ShellContext.Provider>
   );
 }
