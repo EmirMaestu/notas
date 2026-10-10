@@ -246,7 +246,12 @@ export function Sidebar({
         </div>
       </div>
 
-      {dialog && <ListDialog list={dialog.list} folders={folders} onClose={() => setDialog(null)} />}
+      {dialog && (
+        <ListDialog
+          list={dialog.list} folders={folders} owner={dialog.list ? owners[dialog.list.id] : undefined}
+          currentUserId={user.id} onClose={() => setDialog(null)}
+        />
+      )}
       {folderToDelete && (
         <ConfirmDialog
           title={`¿Borrar la carpeta «${folderToDelete.name}»?`} body="Sus listas quedan sueltas: no se borran."

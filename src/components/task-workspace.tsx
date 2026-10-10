@@ -138,7 +138,12 @@ export function TaskWorkspace({
           </aside>
         )}
       </div>
-      {listDialog && list && <ListDialog list={list} folders={folders} onClose={() => setListDialog(false)} />}
+      {listDialog && list && (
+        <ListDialog
+          list={list} folders={folders} owner={listMembers.find((m) => m.role === 'owner')}
+          currentUserId={currentUserId} onClose={() => setListDialog(false)}
+        />
+      )}
     </WorkspaceProvider>
   );
 }

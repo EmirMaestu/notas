@@ -26,6 +26,8 @@ export function Modal({
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const backdropPressed = useRef(false);
+  // El elemento que ya tenía el foco al abrir (un `autoFocus` hijo): sobrevive al doble efecto de StrictMode en desarrollo.
+  const initialFocus = useRef<HTMLElement | null>(null);
   // Se captura durante el render: un `autoFocus` hijo ya habrá movido el foco cuando corran los efectos.
   const [previous] = useState(() => (typeof document === 'undefined' ? null : (document.activeElement as HTMLElement | null)));
   // Siempre la última versión de onClose, sin reinstalar los listeners ni volver a enfocar en cada render.
@@ -39,7 +41,11 @@ export function Modal({
     const token = Symbol('dialog');
     openDialogs.push(token);
     const isTop = () => openDialogs[openDialogs.length - 1] === token;
-    if (!dialog.contains(document.activeElement)) {
+    if (dialog.contains(document.activeElement)) {
+      initialFocus.current = document.activeElement as HTMLElement;
+    } else if (initialFocus.current?.isConnected) {
+      initialFocus.current.focus();
+    } else {
       dialog.querySelector<HTMLElement>(FOCUSABLE)?.focus();
     }
     const onKey = (e: KeyboardEvent) => {
