@@ -1,5 +1,6 @@
 import { todayIn } from '@/core/dates';
 import { NotFoundError } from '@/core/errors';
+import { listFolders, type Folder } from '@/core/lists';
 import { getListMembers, type ListMember } from '@/core/members';
 import { getTask, listTasks, type ListTasksFilter, type TaskWithDetails } from '@/core/tasks';
 import { getDb } from '@/db';
@@ -27,10 +28,16 @@ export async function TaskPage({
   // En la papelera el detalle es de solo lectura: no hace falta.
   const needsMembers = selected && !selected.deletedAt && (selectedList?.shared || selected.assigneeId);
   const members: ListMember[] = selected && needsMembers ? await getListMembers(db, user.id, selected.listId) : [];
+  // Vista de una lista: su rol, miembros (pila del encabezado) y carpetas (diálogo de la lista).
+  const list = filter.listId ? lists.find((l) => l.id === filter.listId) : undefined;
+  const [listMembers, folders]: [ListMember[], Folder[]] = list
+    ? await Promise.all([list.shared ? getListMembers(db, user.id, list.id) : Promise.resolve([]), listFolders(db, user.id)])
+    : [[], []];
   return (
     <TaskWorkspace
       title={title} tasks={tasks} selected={selected} lists={lists} members={members} context={context}
-      today={todayIn(user.timezone)} currentUserId={user.id}
+      today={todayIn(user.timezone)} now={new Date().toISOString()} timezone={user.timezone} currentUserId={user.id}
+      list={list} listMembers={listMembers} folders={folders}
     />
   );
 }
