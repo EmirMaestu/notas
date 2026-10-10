@@ -1,0 +1,6 @@
+# Lo que corre en Linux (VPS / contenedor) va siempre con LF, aunque core.autocrlf=true en Windows:
+# git archive aplica la conversión de fin de línea al exportar.
+*.sh text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+deploy/** text eol=lf

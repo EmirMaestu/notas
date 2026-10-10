@@ -1,0 +1,30 @@
+# Notas — app Next.js en 127.0.0.1:3200 (docker compose, proyecto "notas").
+# Ejemplo: cambiá el dominio por el tuyo. Se copia a /etc/caddy/notas.caddy y se importa al final de /etc/caddy/Caddyfile con `import notas.caddy`.
+notas.example.com {
+	# /mcp responde SSE (clientes de la era 2025 del protocolo): sin compresión para que cada evento salga
+	# apenas la app lo escribe. Son JSON chicos; comprimirlos no aporta.
+	@comprimible not path /mcp /mcp/*
+	encode @comprimible zstd gzip
+
+	# Formularios OAuth y JSON-RPC del MCP: cuerpos chicos.
+	request_body /oauth/* {
+		max_size 1MB
+	}
+	request_body /mcp {
+		max_size 1MB
+	}
+
+	# X-Frame-Options, CSP frame-ancestors y Referrer-Policy los pone la app (next.config.ts): no se repiten.
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		-Server
+		-X-Powered-By
+	}
+
+	# flush_interval -1: sin buffer, las respuestas SSE pasan al cliente en el acto.
+	# Caddy reemplaza X-Forwarded-For con la IP real del cliente: la app usa TRUSTED_PROXY_HOPS=1.
+	reverse_proxy 127.0.0.1:3200 {
+		flush_interval -1
+	}
+}

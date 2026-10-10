@@ -1,0 +1,60 @@
+# Notas en la VPS. Siempre se usa así (deploy.sh y backup.sh lo hacen):
+#   docker compose -p notas --env-file ~/notas/.env -f ~/notas/current/deploy/docker-compose.yml <comando>
+# ~/notas/.env solo sirve para interpolar ${...}: cada servicio recibe únicamente sus variables.
+name: notas
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: notas
+      POSTGRES_USER: notas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en ~/notas/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Solo loopback: lo usa el importador de TickTick por túnel SSH (ssh -L 5434:127.0.0.1:5434 ...).
+    ports:
+      - "127.0.0.1:5434:5432"
+    stop_grace_period: 30s
+    shm_size: 128mb
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notas -d notas"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      labels:
+        notas.component: app
+    # deploy.sh construye notas-app:<release> (NOTAS_TAG); sin NOTAS_TAG (restore.md, backup.sh) usa :latest.
+    image: notas-app:${NOTAS_TAG:-latest}
+    restart: unless-stopped
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://notas:${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en ~/notas/.env}@db:5432/notas
+      APP_URL: ${APP_URL:?falta APP_URL en ~/notas/.env}
+      INVITE_CODE: ${INVITE_CODE:-}
+      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
+      NOTAS_DISABLE_MAINTENANCE: ${NOTAS_DISABLE_MAINTENANCE:-}
+    # Solo el Caddy del host habla con la app. Una sola réplica: los límites de frecuencia están en memoria.
+    ports:
+      - "127.0.0.1:3200:3000"
+    mem_limit: 768m
+    logging: *logging
+
+volumes:
+  pgdata:

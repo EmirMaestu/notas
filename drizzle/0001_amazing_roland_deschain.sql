@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "lists_one_inbox_per_user_idx" ON "lists" USING btree ("user_id") WHERE "lists"."is_inbox";
