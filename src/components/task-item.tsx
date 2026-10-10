@@ -1,11 +1,11 @@
 'use client';
 
-import { CircleAlert, List as ListIcon, RotateCcw, Trash2 } from 'lucide-react';
+import { CircleAlert, List as ListIcon, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { TaskWithDetails } from '@/core/tasks';
-import { formatDueLabel, localTime, trashNote } from '@/lib/format';
+import { createdViaClient, formatDueLabel, localTime, trashNote } from '@/lib/format';
 import { restoreTaskAction, toggleTaskAction, updateTaskAction } from '@/app/app/actions';
 import { Avatar } from './avatar';
 import { PriorityCheckbox } from './priority-checkbox';
@@ -181,6 +181,11 @@ export function TaskItem({
                 >
                   {task.title}
                 </span>
+                {createdViaClient(task.createdVia) && (
+                  <span role="img" aria-label="Creada por IA" className="inline-flex shrink-0 text-accent opacity-90">
+                    <Sparkles size={13} strokeWidth={2} aria-hidden="true" />
+                  </span>
+                )}
                 {task.subtasks.length > 0 && (
                   <span className="inline-flex shrink-0 items-center gap-[3px] text-meta tabular-nums text-muted">
                     <ListIcon size={11} strokeWidth={2.4} aria-hidden="true" />

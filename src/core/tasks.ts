@@ -48,6 +48,8 @@ export interface CreateTaskInput {
   externalId?: string;
   /** Id del usuario asignado: el dueño o un miembro de la lista. */
   assigneeId?: string | null;
+  /** Origen de la tarea: 'web' o 'mcp:<cliente>'. Solo al crear; no se edita. */
+  createdVia?: string | null;
 }
 
 export interface UpdateTaskInput {
@@ -76,6 +78,16 @@ function cleanTitle(title: string): string {
   if (!clean) throw new ValidationError('El título no puede estar vacío');
   if (clean.length > 500) throw new ValidationError('El título no puede superar los 500 caracteres');
   return clean;
+}
+
+const MAX_CREATED_VIA = 120;
+
+function checkCreatedVia(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string' || value.length > MAX_CREATED_VIA || (value !== 'web' && !/^mcp:\S/.test(value))) {
+    throw new ValidationError("Origen de la tarea inválido: usá 'web' o 'mcp:<cliente>'");
+  }
+  return value;
 }
 
 function checkDescription(description: string): string {
@@ -276,6 +288,7 @@ export async function createTask(db: DB, userId: string, input: CreateTaskInput)
   const tagNames = normalizeTags(input.tags ?? []);
   const status = input.status ?? 'pending';
   const description = checkDescription(input.description ?? '');
+  const createdVia = checkCreatedVia(input.createdVia);
 
   try {
     return await db.transaction(async (tx) => {
@@ -289,7 +302,7 @@ export async function createTask(db: DB, userId: string, input: CreateTaskInput)
         .values({
           userId, listId, assigneeId, title, dueDate, dueTime, priority, status, description,
           completedAt: status === 'completed' ? (input.completedAt ?? new Date()) : null,
-          externalId: input.externalId ?? null,
+          externalId: input.externalId ?? null, createdVia,
         })
         .returning();
       if (subtaskItems.length) await replaceSubtasks(tx, task.id, subtaskItems);

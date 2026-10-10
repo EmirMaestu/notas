@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAgo, formatChipDate, formatDetailDate, formatDueLabel, formatLongDate, formatShortDate, formatWeekRange, groupTasksByCompletedDay, groupTasksByDate, localDate, localTime, pendingLabel, trashNote } from '@/lib/format';
+import { createdViaClient, formatAgo, formatChipDate, formatDetailDate, formatDueLabel, formatLongDate, formatShortDate, formatWeekRange, groupTasksByCompletedDay, groupTasksByDate, localDate, localTime, pendingLabel, trashNote } from '@/lib/format';
 
 const TODAY = '2026-10-08'; // jueves
 
@@ -118,5 +118,14 @@ describe('groupTasksByCompletedDay', () => {
     expect(groupTasksByCompletedDay(tasks, SAT, BA).map((g) => [g.label, g.tasks.map((t) => t.id)])).toEqual([
       ['Hoy', ['a', 'b']], ['Ayer', ['c']], ['Jueves 08/10', ['d']],
     ]);
+  });
+});
+
+describe('createdViaClient', () => {
+  it('nombre del cliente MCP, o null si la creó la web o no se sabe', () => {
+    expect(createdViaClient('mcp:Claude')).toBe('Claude');
+    expect(createdViaClient('mcp:Script de backup')).toBe('Script de backup');
+    expect(createdViaClient('web')).toBeNull();
+    expect(createdViaClient(null)).toBeNull();
   });
 });

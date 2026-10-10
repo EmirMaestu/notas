@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Calendar, Clock, Flag, List as ListIcon, RotateCcw, Trash2, User, X } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Flag, List as ListIcon, RotateCcw, Sparkles, Trash2, User, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from 'react';
 import { isValidIsoDate, isValidTime } from '@/core/dates';
@@ -8,7 +8,7 @@ import type { List } from '@/core/lists';
 import type { ListMember } from '@/core/members';
 import type { TaskWithDetails, UpdateTaskInput } from '@/core/tasks';
 import type { ActionResult } from '@/lib/action-result';
-import { formatAgo, formatDetailDate, trashNote } from '@/lib/format';
+import { createdViaClient, formatAgo, formatDetailDate, formatShortDate, localTime, trashNote } from '@/lib/format';
 import { moveTaskAction, restoreTaskAction, toggleTaskAction, updateTaskAction } from '@/app/app/actions';
 import { Avatar } from './avatar';
 import { PriorityCheckbox } from './priority-checkbox';
@@ -173,6 +173,8 @@ export function TaskDetail({
   }
 
   const currentList = lists.find((l) => l.id === listId);
+  const aiClient = createdViaClient(task.createdVia);
+  const createdWhen = `el ${formatShortDate(task.createdAt, timezone)} a las ${localTime(task.createdAt, timezone)}`;
   const header = (
     <div className="flex h-14 shrink-0 items-center gap-2 border-b border-line pl-2.5 pr-3">
       <button type="button" onClick={closeDetail} aria-label="Cerrar detalle" className={`${btn.icon} h-9 w-9`}>
@@ -186,6 +188,16 @@ export function TaskDetail({
         </span>
       )}
       <span className="flex-1" />
+      {aiClient && (
+        <span
+          title={`Creada por ${aiClient} ${createdWhen}`}
+          className="inline-flex h-6 min-w-0 items-center gap-[5px] rounded-tag bg-selected px-2 text-[11.5px] font-semibold text-accent"
+        >
+          <Sparkles size={12} strokeWidth={2.2} aria-hidden="true" className="shrink-0" />
+          <span className="max-w-[160px] truncate">Creada por {aiClient}</span>
+          <span className="sr-only">, {createdWhen}</span>
+        </span>
+      )}
     </div>
   );
   const errorBox = error && (

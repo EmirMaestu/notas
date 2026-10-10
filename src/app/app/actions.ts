@@ -48,6 +48,7 @@ export async function quickAddAction(text: string, context: QuickAddContext) {
       dueDate: parsed.dueDate ?? defaultDue,
       priority: parsed.priority,
       tags,
+      createdVia: 'web',
     });
     return { id: task.id };
   });

@@ -10,8 +10,8 @@ export const MCP_INSTRUCTIONS = [
   'Para asignar tareas o compartir listas se usan emails de personas registradas en Notas.',
 ].join('\n');
 
-/** Servidor MCP de un request: cada herramienta corre en nombre de `userId`. */
-export function createNotasMcpServer(db: DB, userId: string): McpServer {
+/** Servidor MCP de un request: cada herramienta corre en nombre de `userId`; `client` es el nombre de la app. */
+export function createNotasMcpServer(db: DB, userId: string, client?: string): McpServer {
   const server = new McpServer({ name: 'notas', version: '1.0.0' }, { instructions: MCP_INSTRUCTIONS });
   for (const tool of TOOLS) {
     server.registerTool(tool.name, {
@@ -24,7 +24,7 @@ export function createNotasMcpServer(db: DB, userId: string): McpServer {
         idempotentHint: tool.idempotent,
         openWorldHint: false,
       },
-    }, (args) => callTool({ db, userId }, tool.name, args));
+    }, (args) => callTool({ db, userId, client }, tool.name, args));
   }
   return server;
 }

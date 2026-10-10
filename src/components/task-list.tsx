@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { List } from '@/core/lists';
 import type { TaskWithDetails } from '@/core/tasks';
-import { groupTasksByCompletedDay, groupTasksByDate, type TaskGroup } from '@/lib/format';
+import { createdViaClient, groupTasksByCompletedDay, groupTasksByDate, type TaskGroup } from '@/lib/format';
 import { TaskItem, type TaskItemVariant } from './task-item';
+import { useToast } from './toast';
+import { useWorkspace } from './workspace-context';
 
 export type TaskGrouping = 'date' | 'completed' | 'none';
 
@@ -17,9 +19,22 @@ export function TaskList({
   // Ids ya vistos: las tareas que aparecen después (otra pestaña, la IA, «Deshacer») entran con fundido.
   const [initial] = useState(() => new Set(tasks.map((t) => t.id)));
   const seen = useRef(initial);
+  const toast = useToast();
+  const { openTask } = useWorkspace();
   useEffect(() => {
+    const fresh = tasks.filter((t) => !seen.current.has(t.id));
     for (const t of tasks) seen.current.add(t.id);
-  }, [tasks]);
+    // Una IA acaba de crear algo y la pestaña está a la vista: se avisa (lo restaurado o viejo no cuenta).
+    const byAi = fresh.filter(
+      (t) => createdViaClient(t.createdVia) && Date.now() - new Date(t.createdAt).getTime() < 2 * 60_000,
+    );
+    if (byAi.length === 0 || document.visibilityState !== 'visible') return;
+    const first = byAi[0];
+    const client = createdViaClient(first.createdVia)!;
+    toast(byAi.length === 1
+      ? { tone: 'ai', message: `${client} creó «${first.title}»`, action: { label: 'Ver', onClick: () => openTask(first.id) } }
+      : { tone: 'ai', message: `${client} creó ${byAi.length} tareas` });
+  }, [tasks, toast, openTask]);
 
   if (tasks.length === 0) return <>{empty}</>;
   const listInfo = new Map(lists.map((l) => [l.id, l]));

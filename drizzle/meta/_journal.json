@@ -43,6 +43,13 @@
       "when": 1791656103558,
       "tag": "0005_breezy_white_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791674648389,
+      "tag": "0006_cool_steve_rogers",
+      "breakpoints": true
     }
   ]
 }

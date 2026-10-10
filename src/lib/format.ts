@@ -166,3 +166,8 @@ export function groupTasksByCompletedDay<T extends { completedAt: Date | null }>
   }
   return groups;
 }
+
+/** Nombre del cliente MCP que creó la tarea ("Claude"), o null si la creó la web o no se sabe. */
+export function createdViaClient(createdVia: string | null): string | null {
+  return createdVia?.startsWith('mcp:') ? createdVia.slice(4) : null;
+}

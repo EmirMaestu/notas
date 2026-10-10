@@ -17,6 +17,13 @@ import { formatList, formatMember, formatTag, formatTask, weekdayName } from './
 export interface ToolContext {
   db: DB;
   userId: string;
+  /** Nombre visible del cliente MCP ("Claude", el nombre del token…), para `created_via`. */
+  client?: string;
+}
+
+/** Valor de `created_via` para lo que crea este cliente: 'mcp:<nombre>' (o 'mcp:IA' si no se sabe). */
+function createdViaFor(ctx: ToolContext): string {
+  return `mcp:${(ctx.client ?? '').trim().slice(0, 100) || 'IA'}`;
 }
 
 /** Resultado de una herramienta (compatible con CallToolResult del SDK). */
@@ -279,6 +286,7 @@ const taskTools = [
       return taskOut(ctx, await createTask(ctx.db, ctx.userId, {
         title: args.title, description: args.description, listId, dueDate: args.due_date, dueTime: args.due_time,
         priority: args.priority, tags: args.tags, subtasks: args.subtasks, assigneeId,
+        createdVia: createdViaFor(ctx),
       }));
     },
   }),
