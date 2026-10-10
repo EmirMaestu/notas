@@ -86,15 +86,23 @@ export function TaskWorkspace({
   function emptyTrashNow() {
     startEmptying(async () => {
       let error: string | null = null;
+      let leftover = 0;
       try {
         const result = await emptyTrashAction();
         if (!result.ok) error = result.error;
         else if (result.data.deleted === 0) error = 'Las tareas de listas compartidas con vos solo las puede borrar su dueño.';
+        else leftover = result.data.remaining;
       } catch {
         error = SAVE_ERROR;
       }
       setConfirmEmpty(false);
       if (error) toast({ tone: 'error', message: error });
+      else if (leftover > 0) {
+        toast({
+          tone: 'error', duration: 10000,
+          message: `Quedaron ${leftover} ${leftover === 1 ? 'tarea' : 'tareas'} de listas compartidas de otras personas; solo su dueño puede eliminarlas`,
+        });
+      }
     });
   }
 

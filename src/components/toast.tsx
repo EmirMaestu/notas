@@ -66,10 +66,10 @@ function Toast({ toast, onDone }: { toast: ToastState; onDone: () => void }) {
       role={toast.tone === 'error' ? 'alert' : 'status'}
       onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}
-      className="pointer-events-auto relative flex h-12 max-w-full animate-toast-in items-center gap-3 overflow-hidden rounded-card bg-toast-bg pl-4 pr-2 text-[13.5px] font-medium text-toast-fg shadow-pop"
+      className="pointer-events-auto relative flex min-h-12 max-w-full animate-toast-in items-center gap-3 overflow-hidden rounded-card bg-toast-bg py-1.5 pl-4 pr-2 text-[13.5px] font-medium text-toast-fg shadow-pop"
     >
       <Icon size={16} strokeWidth={2.2} aria-hidden="true" className={`shrink-0 ${iconClass}`} />
-      <span className="min-w-0 truncate">{toast.message}</span>
+      <span className="min-w-0 line-clamp-2">{toast.message}</span>
       {toast.action && (
         <button
           type="button"

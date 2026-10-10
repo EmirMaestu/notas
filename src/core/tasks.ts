@@ -597,14 +597,15 @@ export async function searchTasks(
 
 /**
  * Vacía la papelera del usuario: borra para siempre las tareas borradas de sus listas. Las de listas
- * compartidas con él no se tocan (son del dueño; se purgan solas a los 30 días).
+ * compartidas con él no se tocan (son del dueño; se purgan solas a los 30 días). Devuelve cuántas borró y
+ * cuántas siguen en su papelera por ser de listas de otras personas.
  */
-export async function emptyTrash(db: DB, userId: string): Promise<number> {
+export async function emptyTrash(db: DB, userId: string): Promise<{ deleted: number; remaining: number }> {
   const deleted = await db
     .delete(tasks)
     .where(and(isNotNull(tasks.deletedAt), inArray(tasks.listId, ownedListIds(db, userId))))
     .returning({ id: tasks.id });
-  return deleted.length;
+  return { deleted: deleted.length, remaining: await countTasks(db, userId, { view: 'trash' }) };
 }
 
 /**

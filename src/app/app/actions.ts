@@ -83,7 +83,7 @@ export async function restoreTaskAction(taskId: string) {
 
 /** Vacía la papelera (solo tareas de listas propias). Devuelve cuántas se borraron. */
 export async function emptyTrashAction() {
-  return act(async (db, user) => ({ deleted: await emptyTrash(db, user.id) }));
+  return act(async (db, user) => emptyTrash(db, user.id));
 }
 
 export async function addSubtaskAction(taskId: string, title: string) {
