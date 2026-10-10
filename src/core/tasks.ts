@@ -583,6 +583,18 @@ export async function searchTasks(
 }
 
 /**
+ * Vacía la papelera del usuario: borra para siempre las tareas borradas de sus listas. Las de listas
+ * compartidas con él no se tocan (son del dueño; se purgan solas a los 30 días).
+ */
+export async function emptyTrash(db: DB, userId: string): Promise<number> {
+  const deleted = await db
+    .delete(tasks)
+    .where(and(isNotNull(tasks.deletedAt), inArray(tasks.listId, ownedListIds(db, userId))))
+    .returning({ id: tasks.id });
+  return deleted.length;
+}
+
+/**
  * Borra definitivamente las tareas que llevan más de `days` días en la papelera. Devuelve cuántas.
  *
  * ATENCIÓN: opera sobre las tareas de TODOS los usuarios. Es solo para el job diario de mantenimiento:

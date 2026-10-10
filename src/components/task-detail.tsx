@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Calendar, Clock, Flag, List as ListIcon, RotateCcw, Trash2, User, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useTransition } from 'react';
 import { isValidIsoDate, isValidTime } from '@/core/dates';
 import type { List } from '@/core/lists';
 import type { ListMember } from '@/core/members';
@@ -32,6 +32,33 @@ function openPicker(e: React.MouseEvent<HTMLInputElement>) {
   }
 }
 
+/**
+ * Un textarea que crece con su contenido. `field-sizing: content` (que evita el salto antes de hidratar) no existe en
+ * todos los navegadores (Firefox, Safari): sin esto el campo se queda en `rows` líneas y el resto del texto queda cortado. Se recalcula al
+ * cambiar el texto y al cambiar el ancho (el texto se reacomoda).
+ */
+function useAutoGrow(ref: React.RefObject<HTMLTextAreaElement | null>, value: string) {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    };
+    fit();
+    const observer = new ResizeObserver(() => {
+      // Solo si cambió el ancho: cambiar el alto desde acá no debe volver a dispararlo.
+      if (el.dataset.w !== String(el.clientWidth)) {
+        el.dataset.w = String(el.clientWidth);
+        fit();
+      }
+    });
+    el.dataset.w = String(el.clientWidth);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref, value]);
+}
+
 export function TaskDetail({
   task, lists, members, currentUserId, today, now, timezone,
 }: {
@@ -52,6 +79,9 @@ export function TaskDetail({
   const [saving, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  useAutoGrow(titleRef, title);
+  useAutoGrow(descriptionRef, description);
 
   useEffect(() => setDate(task.dueDate ?? ''), [task.dueDate]);
   useEffect(() => setTime(task.dueTime ?? ''), [task.dueTime]);
@@ -271,7 +301,7 @@ export function TaskDetail({
         </dl>
 
         <textarea
-          value={description} onChange={(e) => setDescription(e.target.value)} aria-label="Descripción"
+          ref={descriptionRef} value={description} onChange={(e) => setDescription(e.target.value)} aria-label="Descripción"
           onBlur={() => description !== task.description && save({ description })}
           placeholder="Agregar una descripción…" rows={2}
           className="min-h-[3.2em] w-full shrink-0 resize-none bg-transparent text-body leading-[1.6] text-fg outline-none [field-sizing:content] placeholder:text-muted focus-visible:outline-none"

@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { PublicUser } from '@/core/users';
 import { useMediaQuery } from '@/lib/use-media-query';
+import { AutoRefresh } from './auto-refresh';
 import { ToastProvider } from './toast';
 
 interface ShellContextValue {
@@ -69,6 +70,7 @@ export function AppShell({ user, sidebar, children }: { user: PublicUser; sideba
           {open && <div className="fixed inset-0 z-30 animate-fade-in bg-scrim md:hidden" onClick={closeDrawer} />}
           <main className="min-h-0 min-w-0 flex-1">{children}</main>
         </div>
+        <AutoRefresh />
       </ToastProvider>
     </ShellContext.Provider>
   );
