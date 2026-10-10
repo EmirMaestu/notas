@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="display:flex;flex-direction:column;gap:64px;color:var(--fg);font-family:'Manrope',system-ui,sans-serif;font-size:14px;line-height:1.45;width:2480px">
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+  <symbol id="i-inbox" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></symbol>
+  <symbol id="i-calendar-days" viewBox="0 0 24 24"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path></symbol>
+  <symbol id="i-user-check" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></symbol>
+  <symbol id="i-hash" viewBox="0 0 24 24"><line x1="4" x2="20" y1="9" y2="9"></line><line x1="4" x2="20" y1="15" y2="15"></line><line x1="10" x2="8" y1="3" y2="21"></line><line x1="16" x2="14" y1="3" y2="21"></line></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="M12 5v14"></path></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" x2="4" y1="22" y2="15"></line></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><line x1="8" x2="21" y1="6" y2="6"></line><line x1="8" x2="21" y1="12" y2="12"></line><line x1="8" x2="21" y1="18" y2="18"></line><line x1="3" x2="3.01" y1="6" y2="6"></line><line x1="3" x2="3.01" y1="12" y2="12"></line><line x1="3" x2="3.01" y1="18" y2="18"></line></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></symbol>
+  <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"></path><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"></path></symbol>
+  <symbol id="i-cloud-off" viewBox="0 0 24 24"><path d="m2 2 20 20"></path><path d="M5.782 5.782A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.307-.193"></path><path d="M21.532 16.5A4.5 4.5 0 0 0 17.5 10h-1.79A7.008 7.008 0 0 0 10 5.07"></path></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></symbol>
+</svg>
+
+<!-- 02 · HOY -->
+<section style="display:flex;flex-direction:column;gap:18px">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-left:4px">02 · Hoy, con detalle abierto y agregado rápido en uso</div>
+  <div data-screen-label="Hoy" style="width:1200px;height:820px;display:flex;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--bg);box-shadow:var(--shadow)">
+    <div style="width:248px;flex-shrink:0;border-right:1px solid var(--border);display:grid;background:var(--sidebar)"><dc-import name="NotasSidebar" style="height:100%" active="today" hint-size="248px,820px"></dc-import></div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+      <div style="width:100%;max-width:720px;margin:0 auto;padding:30px 28px 0;box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between">
+          <div><h1 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-0.025em;line-height:1.2">Hoy</h1><div style="margin-top:5px;font-size:13px;color:var(--muted)">Sábado 10 de octubre · <span style="font-variant-numeric:tabular-nums">5</span> pendientes</div></div>
+          <span aria-label="Más opciones" style="width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted)" style-hover="background:var(--hover)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-more"></use></svg></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:12px;height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--accent);background:var(--surface);box-shadow:0 0 0 3px var(--selected)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus"></use></svg>
+            <span style="flex:1;font-size:14px">Pagar luz <span style="color:var(--accent);font-weight:600">mañana</span> <span style="color:var(--accent);font-weight:600">!alta</span> <span style="color:var(--accent);font-weight:600">#casa</span><span style="display:inline-block;width:1.5px;height:16px;background:var(--fg);vertical-align:-3px;margin-left:1px"></span></span>
+            <span style="font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--border);border-radius:5px;padding:1px 6px">↵</span>
+          </div>
+          <div style="display:flex;gap:6px;padding-left:2px;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:6px;background:var(--selected);color:var(--accent);font-size:12px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-calendar"></use></svg>Mañana</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:6px;background:var(--selected);color:var(--accent);font-size:12px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--p-high)" stroke="var(--p-high)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-flag"></use></svg>Prioridad alta</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:6px;background:var(--selected);color:var(--accent);font-size:12px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-hash"></use></svg>casa</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:6px;background:var(--hover);color:var(--muted);font-size:12px;font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:#2F8F5B"></span>Casa</span>
+          </div>
+        </div>
+        <dc-import name="NotasLista" groups="{{ hoy }}" hint-size="100%,420px"></dc-import>
+      </div>
+    </div>
+    <div style="width:400px;flex-shrink:0;border-left:1px solid var(--border)"><dc-import name="NotasDetalle" hint-size="400px,820px"></dc-import></div>
+  </div>
+</section>
+
+<!-- 03 · PRÓXIMOS 7 DÍAS + 04 LISTA -->
+<section style="display:flex;flex-direction:column;gap:18px">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-left:4px">03 · Próximos 7 días &nbsp;·&nbsp; 04 · Lista compartida</div>
+  <div style="display:flex;gap:40px;flex-wrap:wrap">
+    <div data-screen-label="Próximos 7 días" style="width:1200px;height:820px;display:flex;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--bg);box-shadow:var(--shadow)">
+      <div style="width:248px;flex-shrink:0;border-right:1px solid var(--border);display:grid;background:var(--sidebar)"><dc-import name="NotasSidebar" style="height:100%" active="next7" hint-size="248px,820px"></dc-import></div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+        <div style="width:100%;max-width:760px;margin:0 auto;padding:30px 28px 0;box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+          <div><h1 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-0.025em;line-height:1.2">Próximos 7 días</h1><div style="margin-top:5px;font-size:13px;color:var(--muted)">Sáb 10 → Sáb 17 de octubre</div></div>
+          <div style="display:flex;align-items:center;gap:12px;height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus"></use></svg><span style="flex:1;color:var(--muted)">Agregar tarea… «Pagar luz mañana !alta #casa»</span></div>
+          <dc-import name="NotasLista" groups="{{ next7 }}" hint-size="100%,500px"></dc-import>
+        </div>
+      </div>
+    </div>
+    <div data-screen-label="Lista Trabajo" style="width:1200px;height:820px;display:flex;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--bg);box-shadow:var(--shadow)">
+      <div style="width:248px;flex-shrink:0;border-right:1px solid var(--border);display:grid;background:var(--sidebar)"><dc-import name="NotasSidebar" style="height:100%" active="list-trabajo" hint-size="248px,820px"></dc-import></div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+        <div style="width:100%;max-width:760px;margin:0 auto;padding:30px 28px 0;box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between">
+            <div><h1 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-0.025em;line-height:1.2;display:flex;align-items:center;gap:10px"><span style="width:12px;height:12px;border-radius:50%;background:#2F6FD6"></span>Trabajo</h1><div style="margin-top:5px;font-size:13px;color:var(--muted)">Compartida · <span style="font-variant-numeric:tabular-nums">5</span> pendientes</div></div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="display:flex;align-items:center" aria-label="Miembros: Emir, Sofía, Martín">
+                <span style="width:28px;height:28px;border-radius:50%;background:var(--av-emir);color:var(--av-fg);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)">E</span>
+                <span style="width:28px;height:28px;border-radius:50%;background:var(--av-sofia);color:var(--av-fg);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);margin-left:-8px">S</span>
+                <span style="width:28px;height:28px;border-radius:50%;background:var(--av-martin);color:var(--av-fg);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);margin-left:-8px">M</span>
+              </div>
+              <span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-users"></use></svg>Miembros</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus"></use></svg><span style="flex:1;color:var(--muted)">Agregar tarea en Trabajo…</span></div>
+          <dc-import name="NotasLista" groups="{{ trabajo }}" hint-size="100%,400px"></dc-import>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 · BANDEJA, ASIGNADAS, COMPLETADAS, PAPELERA · 06 ETIQUETA -->
+<section style="display:flex;flex-direction:column;gap:18px">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-left:4px">05 · Bandeja · Asignadas a mí · Completadas · Papelera &nbsp;·&nbsp; 06 · Etiqueta #casa</div>
+  <div style="display:flex;gap:40px;flex-wrap:wrap">
+    <sc-for list="{{ views }}" as="v" hint-placeholder-count="5">
+      <div data-screen-label="{{ v.title }}" style="width:1200px;height:820px;display:flex;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--bg);box-shadow:var(--shadow)">
+        <div style="width:248px;flex-shrink:0;border-right:1px solid var(--border);display:grid;background:var(--sidebar)"><dc-import name="NotasSidebar" style="height:100%" active="{{ v.active }}" hint-size="248px,820px"></dc-import></div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+          <div style="width:100%;max-width:760px;margin:0 auto;padding:30px 28px 0;box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between">
+              <div><h1 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-0.025em;line-height:1.2">{{ v.title }}</h1><div style="margin-top:5px;font-size:13px;color:var(--muted)">{{ v.subtitle }}</div></div>
+              <sc-if value="{{ v.action }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:600;color:var(--danger)">{{ v.action }}</span></sc-if>
+            </div>
+            <sc-if value="{{ v.quick }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;align-items:center;gap:12px;height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus"></use></svg><span style="flex:1;color:var(--muted)">{{ v.quick }}</span></div>
+            </sc-if>
+            <dc-import name="NotasLista" groups="{{ v.groups }}" hint-size="100%,300px"></dc-import>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</section>
+
+<!-- 09 · CONFIGURACIÓN -->
+<section style="display:flex;flex-direction:column;gap:18px">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-left:4px">09 · Configuración y conexión con IA</div>
+  <div data-screen-label="Configuración" style="width:1200px;height:1060px;display:flex;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--bg);box-shadow:var(--shadow)">
+    <div style="width:248px;flex-shrink:0;border-right:1px solid var(--border);display:grid;background:var(--sidebar)"><dc-import name="NotasSidebar" style="height:100%" active="settings" hint-size="248px,1060px"></dc-import></div>
+    <div style="flex:1;min-width:0;overflow:hidden">
+      <div style="width:100%;max-width:720px;margin:0 auto;padding:30px 28px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:28px">
+        <h1 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-0.025em;line-height:1.2">Configuración</h1>
+
+        <div style="display:grid;grid-template-columns:180px 1fr;gap:24px;align-items:start">
+          <div><div style="font-weight:700">Cuenta</div></div>
+          <div style="display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:36px;height:36px;border-radius:50%;background:var(--av-emir);color:var(--av-fg);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">E</span><div><div style="font-weight:600">Emir</div><div style="font-size:12.5px;color:var(--muted)">emir@notas.app</div></div></div>
+          </div>
+
+          <div><div style="font-weight:700">Zona horaria</div><div style="font-size:12.5px;color:var(--muted);margin-top:4px;text-wrap:pretty">Define qué es «hoy» para tus vistas y para la IA.</div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;height:40px;padding:0 10px 0 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface)"><span style="display:flex;align-items:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-globe"></use></svg>America/Argentina/Buenos_Aires</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chevron-down"></use></svg></div>
+
+          <div><div style="font-weight:700;display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-sparkles"></use></svg>Conexión con IA</div><div style="font-size:12.5px;color:var(--muted);margin-top:4px;text-wrap:pretty">Claude, ChatGPT u otra IA compatible con MCP pueden crear, completar y mover tus tareas.</div></div>
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">URL del servidor MCP</div>
+              <div style="display:flex;gap:8px">
+                <code style="flex:1;min-width:0;display:flex;align-items:center;height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">https://notas.app/mcp</code>
+                <span aria-label="Copiar URL" style="display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-copy"></use></svg>Copiar</span>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Apps conectadas</div>
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border)"><span style="width:32px;height:32px;border-radius:8px;background:var(--hover);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">C</span><div style="flex:1"><div style="font-weight:600">Claude</div><div style="font-size:12px;color:var(--muted)">Conectada el 02/10 · último uso hace 5 min</div></div><span style="font-size:13px;font-weight:600;color:var(--danger);padding:6px 8px;border-radius:7px" style-hover="background:var(--danger-bg)">Desconectar</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 14px"><span style="width:32px;height:32px;border-radius:8px;background:var(--hover);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">G</span><div style="flex:1"><div style="font-weight:600">ChatGPT</div><div style="font-size:12px;color:var(--muted)">Conectada el 28/09 · último uso hace 3 días</div></div><span style="font-size:13px;font-weight:600;color:var(--danger);padding:6px 8px;border-radius:7px" style-hover="background:var(--danger-bg)">Desconectar</span></div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Tokens personales</div>
+              <div style="font-size:12.5px;color:var(--muted);text-wrap:pretty">Para apps sin OAuth (Cursor, n8n, scripts). Se mandan como <code style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px">Authorization: Bearer …</code></div>
+              <div style="display:flex;gap:8px">
+                <span style="flex:1;display:flex;align-items:center;height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--muted)">Nombre del token, p. ej. Cursor</span>
+                <span style="display:inline-flex;align-items:center;height:40px;padding:0 14px;border-radius:9px;background:var(--accent);color:var(--accent-fg);font-size:13px;font-weight:700">Crear token</span>
+              </div>
+              <div role="status" style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;border:1px solid var(--accent);background:var(--selected)">
+                <div style="display:flex;align-items:center;gap:8px;font-weight:700;color:var(--accent)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-key"></use></svg>Copiá el token ahora: no se va a volver a mostrar.</div>
+                <div style="display:flex;gap:8px">
+                  <code style="flex:1;min-width:0;display:flex;align-items:center;height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-family:'Geist Mono',ui-monospace,monospace;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">ntk_7Qf2mX9bLw4rT8vKpZ3nHcJ6yD1sA0eG5uR</code>
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 12px;border-radius:9px;background:var(--accent);color:var(--accent-fg);font-size:13px;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-copy"></use></svg>Copiar</span>
+                </div>
+                <span style="font-size:13px;font-weight:600;color:var(--accent);text-decoration:underline;text-underline-offset:3px">Listo, ya lo guardé</span>
+              </div>
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-weight:600">Cursor <code style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:var(--muted);font-weight:400;margin-left:6px">ntk_a8f2…</code></div><div style="font-size:12px;color:var(--muted)">Creado el 02/10 · último uso hoy</div></div><span style="font-size:13px;font-weight:600;color:var(--danger);padding:6px 8px;border-radius:7px" style-hover="background:var(--danger-bg)">Revocar</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 14px"><div style="flex:1"><div style="font-weight:600">Script de backup <code style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:var(--muted);font-weight:400;margin-left:6px">ntk_c91e…</code></div><div style="font-size:12px;color:var(--muted)">Creado el 15/09 · último uso nunca</div></div><span style="font-size:13px;font-weight:600;color:var(--danger);padding:6px 8px;border-radius:7px" style-hover="background:var(--danger-bg)">Revocar</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div></div>
+          <div><span style="display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-logout"></use></svg>Cerrar sesión</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 · LOGIN / REGISTRO · 10 OAUTH -->
+<section style="display:flex;flex-direction:column;gap:18px">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-left:4px">01 · Login y registro (con errores) &nbsp;·&nbsp; 10 · Consentimiento OAuth</div>
+  <div style="display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start">
+    <div data-screen-label="Login" style="width:600px;height:720px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:14px;background:var(--sidebar);box-shadow:var(--shadow)">
+      <div style="width:400px;display:flex;flex-direction:column;gap:20px;padding:32px;border-radius:16px;background:var(--surface);border:1px solid var(--border);box-sizing:border-box">
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-fg)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"></use></svg></div><span style="font-weight:800;font-size:17px;letter-spacing:-0.02em">Notas</span></div>
+        <div><h1 style="margin:0;font-size:22px;font-weight:800;letter-spacing:-0.02em">Ingresar</h1><div style="margin-top:4px;font-size:13.5px;color:var(--muted)">Tus tareas, tuyas y de la IA.</div></div>
+        <div role="alert" style="display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:9px;background:var(--danger-bg);color:var(--danger);font-size:13px;font-weight:600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><use href="#i-alert"></use></svg>Email o contraseña incorrectos</div>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600"><span>Email</span><span style="display:flex;align-items:center;height:42px;padding:0 12px;border-radius:9px;border:1px solid var(--danger);background:var(--bg);font-weight:400;font-size:14px">emir@notas.app</span></label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600"><span>Contraseña</span><span style="display:flex;align-items:center;height:42px;padding:0 12px;border-radius:9px;border:1px solid var(--danger);background:var(--bg);font-weight:400;font-size:14px;letter-spacing:.2em">••••••••</span></label>
+        <span style="display:flex;align-items:center;justify-content:center;height:42px;border-radius:9px;background:var(--accent);color:var(--accent-fg);font-size:14px;font-weight:700">Ingresar</span>
+        <div style="text-align:center;font-size:13px;color:var(--muted)">¿No tenés cuenta? <span style="color:var(--accent);font-weight:600">Registrate</span></div>
+      </div>
+    </div>
+    <div data-screen-label="Registro" style="width:600px;height:720px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:14px;background:var(--sidebar);box-shadow:var(--shadow)">
+      <div style="width:400px;display:flex;flex-direction:column;gap:16px;padding:32px;border-radius:16px;background:var(--surface);border:1px solid var(--border);box-sizing:border-box">
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-fg)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"></use></svg></div><span style="font-weight:800;font-size:17px;letter-spacing:-0.02em">Notas</span></div>
+        <div><h1 style="margin:0;font-size:22px;font-weight:800;letter-spacing:-0.02em">Crear cuenta</h1><div style="margin-top:4px;font-size:13.5px;color:var(--muted)">El registro es solo con invitación.</div></div>
+        <div role="alert" style="display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:9px;background:var(--danger-bg);color:var(--danger);font-size:13px;font-weight:600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><use href="#i-alert"></use></svg>Demasiados intentos. Esperá unos minutos.</div>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600"><span>Nombre <span style="color:var(--muted);font-weight:500">(opcional)</span></span><span style="display:flex;align-items:center;height:42px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg);font-weight:400;font-size:14px">Emir</span></label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600"><span>Email</span><span style="display:flex;align-items:center;height:42px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg);font-weight:400;font-size:14px">emir@notas.app</span></label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600"><span>Contraseña</span><span style="display:flex;align-items:center;justify-content:space-between;height:42px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg);font-weight:400;font-size:14px"><span style="letter-spacing:.2em">••••••••••</span><span style="font-size:12px;color:var(--muted);letter-spacing:0">mín. 8</span></span></label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600"><span>Código de invitación</span><span style="display:flex;align-items:center;height:42px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg);font-weight:400;font-size:14px;font-family:'Geist Mono',ui-monospace,monospace;letter-spacing:.06em">NOTAS-4F7K</span></label>
+        <span style="display:flex;align-items:center;justify-content:center;height:42px;border-radius:9px;background:var(--accent);color:var(--accent-fg);font-size:14px;font-weight:700;opacity:.55" aria-disabled="true">Crear cuenta</span>
+        <div style="text-align:center;font-size:13px;color:var(--muted)">¿Ya tenés cuenta? <span style="color:var(--accent);font-weight:600">Ingresá</span></div>
+      </div>
+    </div>
+
+    <div data-screen-label="OAuth consentimiento" style="width:600px;height:720px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:14px;background:var(--sidebar);box-shadow:var(--shadow)">
+      <div style="width:440px;display:flex;flex-direction:column;gap:20px;padding:32px;border-radius:16px;background:var(--surface);border:1px solid var(--border);box-sizing:border-box">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:44px;height:44px;border-radius:12px;background:var(--hover);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px">C</span>
+          <span style="color:var(--muted)">⇄</span>
+          <span style="width:44px;height:44px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-fg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"></use></svg></span>
+        </div>
+        <h1 style="margin:0;font-size:21px;font-weight:800;letter-spacing:-0.02em;line-height:1.25;text-wrap:pretty">Claude quiere acceder a tus tareas de Notas</h1>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:var(--bg);border:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Va a poder</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13.5px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"></use></svg>Ver tus listas y tareas, incluidas las compartidas con vos</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13.5px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"></use></svg>Crear, modificar y completar tareas</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13.5px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"></use></svg>Mandar tareas a la papelera (podés restaurarlas 30 días)</div>
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px">
+          <span style="color:var(--muted)">Cuenta</span><span style="font-weight:600">emir@notas.app</span>
+          <span style="color:var(--muted)">Al terminar vuelve a</span><span style="font-weight:600;display:flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-shield"></use></svg>claude.ai</span>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <span style="display:inline-flex;align-items:center;height:42px;padding:0 16px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:14px;font-weight:600">Cancelar</span>
+          <span style="display:inline-flex;align-items:center;height:42px;padding:0 20px;border-radius:9px;background:var(--accent);color:var(--accent-fg);font-size:14px;font-weight:700">Permitir</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);text-align:center;text-wrap:pretty">Podés desconectar Claude cuando quieras desde Configuración.</div>
+      </div>
+    </div>
+    <div data-screen-label="OAuth error" style="width:600px;height:720px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:14px;background:var(--sidebar);box-shadow:var(--shadow)">
+      <div style="width:440px;display:flex;flex-direction:column;gap:18px;padding:32px;border-radius:16px;background:var(--surface);border:1px solid var(--border);box-sizing:border-box">
+        <span style="width:44px;height:44px;border-radius:12px;background:var(--danger-bg);color:var(--danger);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-alert"></use></svg></span>
+        <h1 style="margin:0;font-size:21px;font-weight:800;letter-spacing:-0.02em;line-height:1.25">Esta solicitud no es válida</h1>
+        <p style="margin:0;font-size:14px;line-height:1.55;color:var(--muted);text-wrap:pretty">La aplicación mandó una solicitud que no podemos verificar. No se concedió ningún acceso a tu cuenta.</p>
+        <code style="display:block;padding:10px 12px;border-radius:9px;background:var(--bg);border:1px solid var(--border);font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:var(--muted)">invalid_request · redirect_uri no coincide</code>
+        <span style="display:inline-flex;align-items:center;gap:8px;align-self:flex-start;height:40px;padding:0 14px;border-radius:9px;border:1px solid var(--border);font-size:14px;font-weight:600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow-left"></use></svg>Volver a claude.ai</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 · DIÁLOGO DE LISTA · 11 ESTADOS -->
+<section style="display:flex;flex-direction:column;gap:18px">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-left:4px">08 · Diálogo de lista (dueño / miembro) &nbsp;·&nbsp; 11 · Estados vacíos, cargando y error &nbsp;·&nbsp; Toast</div>
+  <div style="display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start">
+    <div data-screen-label="Diálogo lista (dueño)" role="dialog" style="width:480px;display:flex;flex-direction:column;border-radius:16px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-lg)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 0"><h2 style="margin:0;font-size:18px;font-weight:800;letter-spacing:-0.02em">Editar lista</h2><span aria-label="Cerrar" style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-x"></use></svg></span></div>
+      <div style="display:flex;flex-direction:column;gap:18px;padding:18px 20px">
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600"><span>Nombre</span><span style="display:flex;align-items:center;height:42px;padding:0 12px;border-radius:9px;border:1px solid var(--accent);box-shadow:0 0 0 3px var(--selected);background:var(--bg);font-weight:400;font-size:14px">Trabajo</span></label>
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:600">Color</span>
+          <div role="radiogroup" style="display:flex;gap:10px">
+            <span style="width:26px;height:26px;border-radius:50%;background:#15697B"></span><span role="radio" aria-checked="true" style="width:26px;height:26px;border-radius:50%;background:#2F6FD6;box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--fg)"></span><span style="width:26px;height:26px;border-radius:50%;background:#12A594"></span><span style="width:26px;height:26px;border-radius:50%;background:#2F8F5B"></span><span style="width:26px;height:26px;border-radius:50%;background:#D08A1A"></span><span style="width:26px;height:26px;border-radius:50%;background:#E0641C"></span><span style="width:26px;height:26px;border-radius:50%;background:#C23B30"></span><span style="width:26px;height:26px;border-radius:50%;background:#C2559A"></span><span style="width:26px;height:26px;border-radius:50%;background:#7A5AD6"></span>
+          </div>
+        </div>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600"><span>Carpeta</span><span style="display:flex;align-items:center;justify-content:space-between;height:42px;padding:0 10px 0 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg);font-weight:400;font-size:14px;color:var(--muted)">Sin carpeta<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chevron-down"></use></svg></span></label>
+        <div style="display:flex;flex-direction:column;gap:10px;padding-top:6px;border-top:1px solid var(--border)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px"><span style="font-size:13px;font-weight:600">Miembros</span><span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">3</span></div>
+          <div style="display:flex;gap:8px"><span style="flex:1;display:flex;align-items:center;height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--muted)">Agregar por email</span><span style="display:inline-flex;align-items:center;height:40px;padding:0 14px;border-radius:9px;border:1px solid var(--border);font-size:13px;font-weight:600">Invitar</span></div>
+          <div style="display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;gap:10px;height:44px"><span style="width:26px;height:26px;border-radius:50%;background:var(--av-emir);color:var(--av-fg);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">E</span><span style="flex:1;font-size:13.5px">Emir <span style="color:var(--muted)">· emir@notas.app</span></span><span style="font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Dueño</span></div>
+            <div style="display:flex;align-items:center;gap:10px;height:44px"><span style="width:26px;height:26px;border-radius:50%;background:var(--av-sofia);color:var(--av-fg);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">S</span><span style="flex:1;font-size:13.5px">Sofía <span style="color:var(--muted)">· sofia@notas.app</span></span><span style="font-size:13px;font-weight:600;color:var(--muted)">Quitar</span></div>
+            <div style="display:flex;align-items:center;gap:10px;height:44px"><span style="width:26px;height:26px;border-radius:50%;background:var(--av-martin);color:var(--av-fg);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">M</span><span style="flex:1;font-size:13.5px">Martín <span style="color:var(--muted)">· martin@notas.app</span></span><span style="font-size:13px;font-weight:600;color:var(--muted)">Quitar</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:14px 20px;border-top:1px solid var(--border);background:var(--bg);border-radius:0 0 16px 16px">
+        <span style="font-size:13px;font-weight:600;color:var(--danger);padding:8px 10px;border-radius:8px">Borrar lista</span>
+        <span style="flex:1"></span>
+        <span style="display:inline-flex;align-items:center;height:40px;padding:0 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:13.5px;font-weight:600">Cancelar</span>
+        <span style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:9px;background:var(--accent);color:var(--accent-fg);font-size:13.5px;font-weight:700">Guardar</span>
+      </div>
+    </div>
+
+    <div data-screen-label="Diálogo lista (miembro)" role="dialog" style="width:480px;display:flex;flex-direction:column;border-radius:16px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-lg)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 0"><h2 style="margin:0;font-size:18px;font-weight:800;letter-spacing:-0.02em;display:flex;align-items:center;gap:10px"><span style="width:12px;height:12px;border-radius:50%;background:#C2559A"></span>Viaje a Mendoza</h2><span aria-label="Cerrar" style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-x"></use></svg></span></div>
+      <div style="display:flex;flex-direction:column;gap:16px;padding:16px 20px 20px">
+        <div style="display:flex;gap:10px;padding:12px 14px;border-radius:10px;background:var(--bg);border:1px solid var(--border);font-size:13px;color:var(--muted);line-height:1.5;text-wrap:pretty"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><use href="#i-users"></use></svg>Sofía compartió esta lista con vos. Solo ella puede cambiarle el nombre, el color o borrarla.</div>
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;font-weight:600">Miembros</span><span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">2</span></div>
+        <div style="display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:10px;height:44px"><span style="width:26px;height:26px;border-radius:50%;background:var(--av-sofia);color:var(--av-fg);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">S</span><span style="flex:1;font-size:13.5px">Sofía <span style="color:var(--muted)">· sofia@notas.app</span></span><span style="font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Dueña</span></div>
+          <div style="display:flex;align-items:center;gap:10px;height:44px"><span style="width:26px;height:26px;border-radius:50%;background:var(--av-emir);color:var(--av-fg);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">E</span><span style="flex:1;font-size:13.5px">Emir <span style="color:var(--muted)">· vos</span></span></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--border);background:var(--bg);border-radius:0 0 16px 16px">
+        <span style="display:inline-flex;align-items:center;height:40px;padding:0 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:13.5px;font-weight:600;color:var(--danger)">Salir de la lista</span>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px;width:1200px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <sc-for list="{{ empties }}" as="e" hint-placeholder-count="6">
+          <div data-screen-label="{{ e.label }}" style="height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;padding:28px;border:1px solid var(--border);border-radius:14px;background:var(--bg);box-sizing:border-box">
+            <span style="width:44px;height:44px;border-radius:12px;background:var(--hover);display:flex;align-items:center;justify-content:center;margin-bottom:8px;color:var(--muted)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-{{ e.icon }}"></use></svg></span>
+            <div style="font-size:15px;font-weight:700;letter-spacing:-0.01em">{{ e.title }}</div>
+            <div style="font-size:13px;color:var(--muted);max-width:260px;text-wrap:pretty">{{ e.body }}</div>
+            <sc-if value="{{ e.action }}" hint-placeholder-val="{{ true }}"><span style="margin-top:12px;display:inline-flex;align-items:center;height:36px;padding:0 14px;border-radius:9px;background:{{ e.actionBg }};color:{{ e.actionFg }};border:1px solid {{ e.actionBorder }};font-size:13px;font-weight:700">{{ e.action }}</span></sc-if>
+          </div>
+        </sc-for>
+        <div data-screen-label="Cargando" style="height:280px;padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--bg);box-sizing:border-box;display:flex;flex-direction:column;gap:14px" aria-busy="true" aria-label="Cargando tareas">
+          <div style="width:90px;height:14px;border-radius:5px;background:var(--skeleton)"></div>
+          <div style="display:flex;align-items:center;gap:14px;height:44px"><span style="width:20px;height:20px;border-radius:50%;background:var(--skeleton)"></span><span style="flex:1;height:12px;border-radius:5px;background:var(--skeleton);max-width:62%"></span><span style="width:36px;height:12px;border-radius:5px;background:var(--skeleton)"></span></div>
+          <div style="display:flex;align-items:center;gap:14px;height:44px"><span style="width:20px;height:20px;border-radius:50%;background:var(--skeleton)"></span><span style="flex:1;height:12px;border-radius:5px;background:var(--skeleton);max-width:45%"></span><span style="width:50px;height:12px;border-radius:5px;background:var(--skeleton)"></span></div>
+          <div style="display:flex;align-items:center;gap:14px;height:44px"><span style="width:20px;height:20px;border-radius:50%;background:var(--skeleton)"></span><span style="flex:1;height:12px;border-radius:5px;background:var(--skeleton);max-width:72%"></span><span style="width:28px;height:12px;border-radius:5px;background:var(--skeleton)"></span></div>
+          <div style="font-size:12px;color:var(--muted);margin-top:auto">Pulso suave de 1,4 s sobre los bloques (opacidad .6 → 1).</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:20px;align-items:center">
+        <div data-screen-label="Toast deshacer" style="display:inline-flex;align-items:center;gap:12px;height:48px;padding:0 8px 0 16px;border-radius:12px;background:var(--toast-bg);color:var(--toast-fg);box-shadow:var(--shadow-lg);font-size:13.5px;font-weight:500">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.8"><use href="#i-trash"></use></svg>
+          <span>Tarea enviada a la papelera</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:7px;color:var(--toast-accent);font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#i-undo"></use></svg>Deshacer</span>
+          <span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;opacity:.7"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-x"></use></svg></span>
+        </div>
+        <div data-screen-label="Toast IA" style="display:inline-flex;align-items:center;gap:12px;height:48px;padding:0 8px 0 16px;border-radius:12px;background:var(--toast-bg);color:var(--toast-fg);box-shadow:var(--shadow-lg);font-size:13.5px;font-weight:500">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--toast-accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-sparkles"></use></svg>
+          <span>Claude completó «Pagar la luz»</span>
+          <span style="display:inline-flex;align-items:center;height:32px;padding:0 10px;border-radius:7px;color:var(--toast-accent);font-weight:700">Ver</span>
+          <span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;opacity:.7"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-x"></use></svg></span>
+        </div>
+        <div data-screen-label="Toast error" style="display:inline-flex;align-items:center;gap:12px;height:48px;padding:0 8px 0 16px;border-radius:12px;background:var(--toast-bg);color:var(--toast-fg);box-shadow:var(--shadow-lg);font-size:13.5px;font-weight:500">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--toast-danger)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-alert"></use></svg>
+          <span>No se pudo guardar. Probá de nuevo.</span>
+          <span style="display:inline-flex;align-items:center;height:32px;padding:0 10px;border-radius:7px;color:var(--toast-accent);font-weight:700">Reintentar</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 · CELULAR -->
+<section style="display:flex;flex-direction:column;gap:18px">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-left:4px">12 · Celular (390 px): Hoy · Detalle · Cajón de navegación</div>
+  <div style="display:flex;gap:40px;align-items:flex-start">
+    <div data-screen-label="Celular Hoy" style="width:390px;height:844px;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:28px;overflow:hidden;background:var(--bg);box-shadow:var(--shadow);position:relative">
+      <div style="height:54px;flex-shrink:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">9:41</div>
+      <div style="display:flex;align-items:center;gap:6px;padding:4px 10px 10px">
+        <span aria-label="Abrir menú" style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-menu"></use></svg></span>
+        <div style="flex:1"><h1 style="margin:0;font-size:22px;font-weight:800;letter-spacing:-0.025em;line-height:1.15">Hoy</h1><div style="font-size:12.5px;color:var(--muted)">Sábado 10 de octubre · 5 pendientes</div></div>
+        <span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center"><span style="width:30px;height:30px;border-radius:50%;background:var(--av-emir);color:var(--av-fg);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">E</span></span>
+      </div>
+      <div style="flex:1;min-height:0;overflow:hidden;padding:0 8px"><dc-import name="NotasLista" groups="{{ hoyMobile }}" hint-size="100%,500px"></dc-import></div>
+      <div style="flex-shrink:0;padding:10px 12px 28px;background:var(--bg);border-top:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:12px;height:48px;padding:0 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus"></use></svg><span style="flex:1;color:var(--muted);font-size:15px">Agregar tarea…</span></div>
+      </div>
+    </div>
+
+    <div data-screen-label="Celular Detalle" style="width:390px;height:844px;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:28px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow)">
+      <div style="height:54px;flex-shrink:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">9:41</div>
+      <div style="flex:1;min-height:0"><dc-import name="NotasDetalle" mobile="{{ true }}" hint-size="390px,780px"></dc-import></div>
+    </div>
+
+    <div data-screen-label="Celular Cajón" style="width:390px;height:844px;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:28px;overflow:hidden;background:var(--bg);box-shadow:var(--shadow);position:relative">
+      <div style="height:54px;flex-shrink:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">9:41</div>
+      <div style="display:flex;align-items:center;gap:6px;padding:4px 10px 10px">
+        <span style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-menu"></use></svg></span>
+        <div style="flex:1"><h1 style="margin:0;font-size:22px;font-weight:800;letter-spacing:-0.025em;line-height:1.15">Hoy</h1><div style="font-size:12.5px;color:var(--muted)">Sábado 10 de octubre · 5 pendientes</div></div>
+      </div>
+      <div style="flex:1;min-height:0;overflow:hidden;padding:0 8px"><dc-import name="NotasLista" groups="{{ hoyMobile }}" hint-size="100%,500px"></dc-import></div>
+      <div style="position:absolute;inset:0;background:var(--scrim)"></div>
+      <div style="position:absolute;top:0;bottom:0;left:0;width:300px;box-shadow:var(--shadow-lg);display:grid;background:var(--sidebar)"><dc-import name="NotasSidebar" style="height:100%" active="today" hint-size="300px,844px"></dc-import></div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPONENTES -->
+<section style="display:flex;flex-direction:column;gap:18px">
+  <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-left:4px">Componentes · variantes y estados</div>
+  <div style="display:grid;grid-template-columns:720px 1fr;gap:40px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--muted)">Fila de tarea — normal · hover · seleccionada · foco de teclado · completada · vencida · en papelera</div>
+        <div style="padding:8px;border:1px solid var(--border);border-radius:14px;background:var(--bg)"><dc-import name="NotasLista" groups="{{ rowStates }}" hint-size="100%,340px"></dc-import></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--muted)">Checkbox de prioridad — ninguna · baja · media · alta · completada · completando (animación)</div>
+        <div style="display:flex;gap:28px;align-items:center;padding:18px 20px;border:1px solid var(--border);border-radius:14px;background:var(--bg)">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:50%;border:2px solid var(--p-none);box-sizing:border-box"></span><span style="font-size:11px;color:var(--muted)">Ninguna</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:50%;border:2px solid var(--p-low);box-sizing:border-box"></span><span style="font-size:11px;color:var(--muted)">Baja</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:50%;border:2px solid var(--p-med);box-sizing:border-box"></span><span style="font-size:11px;color:var(--muted)">Media</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:50%;border:2px solid var(--p-high);box-sizing:border-box"></span><span style="font-size:11px;color:var(--muted)">Alta</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:50%;border:2px solid var(--p-high);box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:color-mix(in oklab,var(--p-high) 14%,transparent)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--p-high)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"></use></svg></span><span style="font-size:11px;color:var(--muted)">Hover</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent-fg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"></use></svg></span><span style="font-size:11px;color:var(--muted)">Completada</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px">{{ animCheck }}<span style="font-size:11px;color:var(--muted)">Completando</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:50%;border:2px solid var(--p-med);box-sizing:border-box;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent)"></span><span style="font-size:11px;color:var(--muted)">Foco</span></div>
+          <div style="margin-left:auto;font-size:12px;color:var(--muted);max-width:200px;text-wrap:pretty">En el detalle la prioridad también se nombra («Alta») y lleva ícono de bandera: no depende solo del color.</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--muted)">Campo de agregado rápido — reposo · foco · escribiendo con detección</div>
+        <div style="display:flex;flex-direction:column;gap:12px;padding:18px 20px;border:1px solid var(--border);border-radius:14px;background:var(--bg)">
+          <div style="display:flex;align-items:center;gap:12px;height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus"></use></svg><span style="flex:1;color:var(--muted)">Agregar tarea… «Pagar luz mañana !alta #casa»</span><span style="font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--border);border-radius:5px;padding:1px 6px">N</span></div>
+          <div style="display:flex;align-items:center;gap:12px;height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--accent);background:var(--surface);box-shadow:0 0 0 3px var(--selected)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus"></use></svg><span style="flex:1;color:var(--muted)">Agregar tarea…</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:12px;height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--accent);background:var(--surface);box-shadow:0 0 0 3px var(--selected)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-plus"></use></svg><span style="flex:1">Llamar al contador <span style="color:var(--accent);font-weight:600">el lunes</span> <span style="color:var(--accent);font-weight:600">!media</span> <span style="color:var(--accent);font-weight:600">#llamadas</span></span><span style="font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--border);border-radius:5px;padding:1px 6px">↵</span></div>
+            <div style="display:flex;gap:6px;padding-left:2px"><span style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:6px;background:var(--selected);color:var(--accent);font-size:12px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-calendar"></use></svg>Lun 12/10</span><span style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:6px;background:var(--selected);color:var(--accent);font-size:12px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--p-med)" stroke="var(--p-med)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-flag"></use></svg>Prioridad media</span><span style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:6px;background:var(--selected);color:var(--accent);font-size:12px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-hash"></use></svg>llamadas</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--muted)">Botones — primario · secundario · peligro · fantasma (normal / deshabilitado)</div>
+        <div style="display:grid;grid-template-columns:auto auto;gap:12px 16px;justify-content:start;align-items:center;padding:18px 20px;border:1px solid var(--border);border-radius:14px;background:var(--bg)">
+          <span style="display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:9px;background:var(--accent);color:var(--accent-fg);font-size:13.5px;font-weight:700">Guardar</span><span style="display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:9px;background:var(--accent);color:var(--accent-fg);font-size:13.5px;font-weight:700;opacity:.5">Guardar</span>
+          <span style="display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:13.5px;font-weight:600">Cancelar</span><span style="display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:13.5px;font-weight:600;opacity:.5">Cancelar</span>
+          <span style="display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:9px;background:var(--danger);color:#fff;font-size:13.5px;font-weight:700">Borrar lista</span><span style="display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:9px;background:var(--danger);color:#fff;font-size:13.5px;font-weight:700;opacity:.5">Borrar lista</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 12px;border-radius:9px;color:var(--danger);font-size:13.5px;font-weight:600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-trash"></use></svg>Mandar a la papelera</span><span style="display:inline-flex;align-items:center;height:38px;padding:0 12px;border-radius:9px;color:var(--fg);font-size:13.5px;font-weight:600;background:var(--hover)">Fantasma (hover)</span>
+          <span style="display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:9px;background:var(--accent);color:var(--accent-fg);font-size:13.5px;font-weight:700;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent)">Foco visible</span><span style="font-size:12px;color:var(--muted)">anillo 2 px + separación 2 px, en todo lo enfocable</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--muted)">Inputs y select — reposo · foco · error · deshabilitado</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;padding:18px 20px;border:1px solid var(--border);border-radius:14px;background:var(--bg)">
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600"><span>Nombre</span><span style="display:flex;align-items:center;height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-weight:400;color:var(--muted)">Placeholder</span></label>
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600"><span>Nombre</span><span style="display:flex;align-items:center;height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--accent);box-shadow:0 0 0 3px var(--selected);background:var(--surface);font-weight:400">Casa</span></label>
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600"><span>Email</span><span style="display:flex;align-items:center;height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--danger);background:var(--surface);font-weight:400">sofia@notas</span><span style="font-size:12px;font-weight:500;color:var(--danger)">Ingresá un email válido</span></label>
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;opacity:.55"><span>Carpeta</span><span style="display:flex;align-items:center;justify-content:space-between;height:40px;padding:0 10px 0 12px;border-radius:9px;border:1px solid var(--border);background:var(--hover);font-weight:400">Personal<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chevron-down"></use></svg></span></label>
+          <div style="grid-column:1/-1;display:flex;gap:16px;align-items:flex-start">
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;width:200px"><span>Prioridad (select)</span><span style="display:flex;align-items:center;justify-content:space-between;height:40px;padding:0 10px 0 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-weight:600"><span style="display:flex;align-items:center;gap:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="var(--p-med)" stroke="var(--p-med)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-flag"></use></svg>Media</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chevron-down"></use></svg></span></label>
+            <div style="width:200px;margin-top:24px;display:flex;flex-direction:column;padding:6px;border-radius:10px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-lg)">
+              <span style="display:flex;align-items:center;gap:9px;height:34px;padding:0 10px;border-radius:7px;font-size:13.5px"><span style="width:14px;height:14px;border-radius:50%;border:2px solid var(--p-none);box-sizing:border-box"></span>Ninguna</span>
+              <span style="display:flex;align-items:center;gap:9px;height:34px;padding:0 10px;border-radius:7px;font-size:13.5px"><span style="width:14px;height:14px;border-radius:50%;border:2px solid var(--p-low);box-sizing:border-box"></span>Baja</span>
+              <span style="display:flex;align-items:center;gap:9px;height:34px;padding:0 10px;border-radius:7px;font-size:13.5px;background:var(--selected);color:var(--accent);font-weight:600"><span style="width:14px;height:14px;border-radius:50%;border:2px solid var(--p-med);box-sizing:border-box"></span>Media<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto"><use href="#i-check"></use></svg></span>
+              <span style="display:flex;align-items:center;gap:9px;height:34px;padding:0 10px;border-radius:7px;font-size:13.5px"><span style="width:14px;height:14px;border-radius:50%;border:2px solid var(--p-high);box-sizing:border-box"></span>Alta</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--muted)">Chips, avatares e ítem de navegación</div>
+        <div style="display:flex;flex-direction:column;gap:16px;padding:18px 20px;border:1px solid var(--border);border-radius:14px;background:var(--bg)">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="padding:2px 7px;border-radius:5px;background:var(--hover);font-size:12px;font-weight:500">#casa</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;border-radius:6px;background:var(--hover);font-size:12.5px;font-weight:600">#urgente<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#i-x"></use></svg></span>
+            <span style="padding:1px 7px;border-radius:5px;border:1px solid var(--border);font-size:12px;color:var(--muted)">#q4 · de Martín</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:6px;background:var(--selected);color:var(--accent);font-size:12px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-calendar"></use></svg>Mañana</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:6px;background:var(--selected);color:var(--accent);font-size:11.5px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-sparkles"></use></svg>Creada por Claude</span>
+            <span style="font-size:12.5px;font-weight:600;color:var(--danger);display:inline-flex;align-items:center;gap:5px;font-variant-numeric:tabular-nums"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#i-alert"></use></svg>Ayer</span>
+            <span style="font-size:12.5px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums">Hoy 15:00</span>
+            <span style="font-size:12.5px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums">Lun 10:00</span>
+            <span style="font-size:12.5px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums">20/10</span>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center">
+            <span style="width:20px;height:20px;border-radius:50%;background:var(--av-emir);color:var(--av-fg);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center">E</span>
+            <span style="width:24px;height:24px;border-radius:50%;background:var(--av-sofia);color:var(--av-fg);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">S</span>
+            <span style="width:28px;height:28px;border-radius:50%;background:var(--av-martin);color:var(--av-fg);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">M</span>
+            <span style="width:36px;height:36px;border-radius:50%;background:var(--av-sofia);color:var(--av-fg);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">SG</span>
+            <div style="display:flex;align-items:center"><span style="width:28px;height:28px;border-radius:50%;background:var(--av-emir);color:var(--av-fg);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)">E</span><span style="width:28px;height:28px;border-radius:50%;background:var(--av-sofia);color:var(--av-fg);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);margin-left:-8px">S</span><span style="width:28px;height:28px;border-radius:50%;background:var(--hover);color:var(--muted);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);margin-left:-8px">+2</span></div>
+            <span style="font-size:12px;color:var(--muted);margin-left:auto;max-width:220px;text-wrap:pretty">Color estable por persona (hash del id → 1 de 6 tonos). Iniciales: nombre, o email si no hay.</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px;border-radius:12px;background:var(--sidebar)">
+            <span style="display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:8px;font-weight:500"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.85"><use href="#i-inbox"></use></svg><span style="flex:1">Bandeja</span><span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">3</span></span>
+            <span style="display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:8px;font-weight:500;background:var(--hover)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.85"><use href="#i-inbox"></use></svg><span style="flex:1">Hover</span><span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">3</span></span>
+            <span style="display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:8px;font-weight:600;background:var(--selected);color:var(--accent)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-sun"></use></svg><span style="flex:1">Activa</span><span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">5</span></span>
+            <span style="display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:8px;font-weight:500;box-shadow:0 0 0 2px var(--sidebar),0 0 0 4px var(--accent)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.85"><use href="#i-inbox"></use></svg><span style="flex:1">Foco</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:2500,&quot;height&quot;:9000}}">
+class Component extends DCLogic {
+  renderVals() {
+    const P = { 5: 'var(--p-high)', 3: 'var(--p-med)', 1: 'var(--p-low)', 0: 'var(--p-none)' };
+    const AV = { S: ['S', 'var(--av-sofia)', 'Sofía'], M: ['M', 'var(--av-martin)', 'Martín'], E: ['E', 'var(--av-emir)', 'Emir'] };
+    const LD = { Casa: '#2F8F5B', Trabajo: '#2F6FD6', Compras: '#D08A1A', Facultad: '#7A5AD6' };
+    const row = (o) => {
+      const tags = o.tags || [];
+      const done = !!o.done;
+      return {
+        title: o.title, done, checkbox: !o.trash,
+        pColor: done ? 'var(--accent)' : P[o.p || 0], cbBg: done ? 'var(--accent)' : 'transparent',
+        bg: o.selected ? 'var(--selected)' : o.hover ? 'var(--hover)' : 'transparent',
+        ring: o.focus ? '0 0 0 2px var(--bg),0 0 0 4px var(--accent)' : 'none', opacity: 1,
+        titleColor: done || o.trash ? 'var(--muted)' : 'var(--fg)', deco: done ? 'line-through' : 'none',
+        date: o.date ? o.date + (o.time ? ' ' + o.time : '') : '',
+        dateColor: o.overdue ? 'var(--danger)' : o.date === 'Hoy' ? 'var(--accent)' : 'var(--muted)', overdue: !!o.overdue,
+        list: o.list || '', listDot: LD[o.list] || 'var(--muted)', tags, sub: o.sub || '', note: o.note || '',
+        meta: !!(o.list || tags.length || o.note),
+        who: o.who ? AV[o.who][0] : '', whoBg: o.who ? AV[o.who][1] : '', whoName: o.who ? 'Asignada a ' + AV[o.who][2] : '',
+        ai: !!o.ai, restore: !!o.restore,
+      };
+    };
+    const grp = (label, tasks, danger) => ({ label, color: danger ? 'var(--danger)' : 'var(--muted)', count: tasks.length, tasks: tasks.map(row) });
+    const contador = { title: 'Llamar al contador', p: 3, date: 'Ayer', overdue: 1, tags: ['llamadas'] };
+    const luz = { title: 'Pagar la luz', p: 5, date: 'Hoy', list: 'Casa', tags: ['casa'] };
+    const q4 = { title: 'Revisar presupuesto Q4', p: 5, date: 'Hoy', time: '15:00', list: 'Trabajo', who: 'M', sub: '1/3', ai: 1 };
+    const hoyTasks = [
+      { title: 'Turno con el dentista', date: 'Hoy', time: '11:30', list: 'Casa' },
+      { title: 'Responder mail de la cátedra', p: 1, date: 'Hoy', list: 'Facultad' },
+      { title: 'Sacar la basura', date: 'Hoy', list: 'Casa', tags: ['casa'], done: 1 },
+    ];
+    const hoy = [grp('Vencidas', [contador], true), grp('Hoy', [luz, { ...q4, selected: 1 }, ...hoyTasks])];
+    const hoyMobile = [grp('Vencidas', [contador], true), grp('Hoy', [luz, q4, ...hoyTasks])];
+    const next7 = [
+      grp('Vencidas', [contador], true),
+      grp('Hoy', [luz, q4]),
+      grp('Mañana', [{ title: 'Comprar yerba y pan', date: 'Mañana', list: 'Compras', who: 'S' }]),
+      grp('Lunes 12/10', [{ title: 'Reunión con proveedor', date: 'Lun', time: '10:00', list: 'Trabajo', who: 'E' }]),
+      grp('Jueves 15/10', [{ title: 'Entregar TP de Bases de Datos', p: 5, date: 'Jue', list: 'Facultad' }]),
+      grp('Sábado 17/10', [{ title: 'Cortar el pasto', p: 1, date: 'Sáb', list: 'Casa', tags: ['finde'] }]),
+    ];
+    const trabajo = [grp('', [
+      { ...q4, list: '' }, { title: 'Reunión con proveedor', date: 'Lun', time: '10:00', who: 'E' },
+      { title: 'Preparar demo para el cliente', p: 3, date: 'Mié', who: 'S', sub: '0/4' },
+      { title: 'Actualizar contrato de la oficina', date: '20/10', who: 'E' },
+      { title: 'Pedir presupuesto de notebooks', p: 1 },
+    ])];
+    const views = [
+      { title: 'Bandeja', active: 'inbox', subtitle: 'Tareas sin lista · 3 pendientes', quick: 'Agregar tarea a la Bandeja…', groups: [grp('', [
+        { title: 'Renovar el DNI' }, { title: 'Leer artículo sobre MCP y agentes', ai: 1, tags: ['finde'] }, { title: 'Comprar regalo para mamá', p: 3, date: '24/10' },
+      ])] },
+      { title: 'Asignadas a mí', active: 'assigned', subtitle: 'En listas compartidas · 3 pendientes', quick: '', groups: [grp('', [
+        { title: 'Reunión con proveedor', date: 'Lun', time: '10:00', list: 'Trabajo', who: 'E' },
+        { title: 'Actualizar contrato de la oficina', date: '20/10', list: 'Trabajo', who: 'E' },
+        { title: 'Armar lista del súper', date: 'Mañana', list: 'Compras', who: 'E', ai: 1 },
+      ])] },
+      { title: 'Completadas', active: 'completed', subtitle: 'Últimos 30 días', quick: '', groups: [
+        grp('Hoy', [{ title: 'Sacar la basura', list: 'Casa', tags: ['casa'], done: 1, note: '09:12' }, { title: 'Mandar factura de septiembre', list: 'Trabajo', done: 1, note: '08:30 · por Claude', ai: 1 }]),
+        grp('Ayer', [{ title: 'Pagar expensas', list: 'Casa', done: 1, note: '18:05' }]),
+        grp('Jueves 08/10', [{ title: 'Mandar CV actualizado', done: 1, note: '12:40' }]),
+      ] },
+      { title: 'Papelera', active: 'trash', subtitle: 'Se eliminan solas a los 30 días', quick: '', action: 'Vaciar papelera', groups: [grp('', [
+        { title: 'Llamar a Movistar', trash: 1, restore: 1, list: 'Casa', note: 'Borrada hace 3 días · se elimina en 27' },
+        { title: 'Tarea de prueba', trash: 1, restore: 1, note: 'Borrada hace 27 días · se elimina en 3' },
+      ])] },
+      { title: '#casa', active: 'tag-casa', subtitle: 'Etiqueta · 3 pendientes', quick: 'Agregar tarea con #casa…', groups: [grp('', [
+        luz, { title: 'Cambiar la lamparita del pasillo', list: 'Casa', tags: ['casa'] },
+        { title: 'Arreglar la canilla de la cocina', p: 3, date: 'Lun', list: 'Casa', tags: ['casa'] },
+      ])] },
+    ];
+    const rowStates = [grp('', [
+      { title: 'Normal — Comprar yerba y pan', date: 'Mañana', list: 'Compras', who: 'S' },
+      { title: 'Hover — Cortar el pasto', p: 1, date: 'Sáb', tags: ['finde'], hover: 1 },
+      { ...q4, title: 'Seleccionada — Revisar presupuesto Q4', selected: 1 },
+      { title: 'Foco de teclado — Entregar TP', p: 5, date: 'Jue', list: 'Facultad', focus: 1 },
+      { title: 'Completada — Sacar la basura', list: 'Casa', done: 1, note: 'Hoy 09:12' },
+      { ...contador, title: 'Vencida — Llamar al contador' },
+      { title: 'En papelera — Llamar a Movistar', trash: 1, restore: 1, note: 'Se elimina en 27 días' },
+    ])];
+    const empties = [
+      { label: 'Hoy vacío', icon: 'sun', title: 'Nada para hoy', body: 'Disfrutá el día, o dejá anotado algo para después.', action: 'Agregar tarea', actionBg: 'var(--accent)', actionFg: 'var(--accent-fg)', actionBorder: 'var(--accent)' },
+      { label: 'Bandeja vacía', icon: 'inbox', title: 'Bandeja vacía', body: 'Todo lo que agregues sin lista cae acá hasta que lo ordenes.', action: 'Agregar tarea', actionBg: 'var(--accent)', actionFg: 'var(--accent-fg)', actionBorder: 'var(--accent)' },
+      { label: 'Asignadas vacío', icon: 'user-check', title: 'Nadie te asignó nada', body: 'Cuando te asignen una tarea en una lista compartida la vas a ver acá.', action: 'Ver listas compartidas', actionBg: 'var(--surface)', actionFg: 'var(--fg)', actionBorder: 'var(--border)' },
+      { label: 'Completadas vacío', icon: 'check-circle', title: 'Todavía nada completado', body: 'Cuando termines una tarea, queda guardada acá 30 días.', action: '', actionBg: '', actionFg: '', actionBorder: '' },
+      { label: 'Papelera vacía', icon: 'trash', title: 'La papelera está vacía', body: 'Lo que borres se guarda 30 días por si te arrepentís.', action: '', actionBg: '', actionFg: '', actionBorder: '' },
+      { label: 'Error', icon: 'cloud-off', title: 'No pudimos cargar tus tareas', body: 'Revisá la conexión. Lo que hayas cambiado sin conexión no se perdió.', action: 'Probá de nuevo', actionBg: 'var(--surface)', actionFg: 'var(--fg)', actionBorder: 'var(--border)' },
+    ];
+    if (!this._anim) {
+      this._anim = React.createElement('span', { style: { width: 20, height: 20, borderRadius: '50%', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'notasCheck 1.6s ease-in-out infinite' } },
+        React.createElement('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'var(--accent-fg)', strokeWidth: 3.5, strokeLinecap: 'round', strokeLinejoin: 'round', style: { animation: 'notasCheckMark 1.6s ease-in-out infinite' } },
+          React.createElement('use', { href: '#i-check' })));
+    }
+    return { hoy, hoyMobile, next7, trabajo, views, rowStates, empties, animCheck: this._anim };
+  }
+}
+</script>
+</body>
+</html>

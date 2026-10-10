@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9E6E0;font-family:'Manrope',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#15697B}a:hover{color:#0E505E}
+@keyframes notasCheck{0%,15%{box-shadow:inset 0 0 0 2px var(--p-high);background:transparent;transform:scale(1)}35%{transform:scale(.86)}55%{box-shadow:inset 0 0 0 10px var(--accent);background:var(--accent);transform:scale(1.14)}70%,100%{box-shadow:inset 0 0 0 10px var(--accent);background:var(--accent);transform:scale(1)}}
+@keyframes notasCheckMark{0%,45%{opacity:0;transform:scale(.3)}65%,100%{opacity:1;transform:scale(1)}}
+</style>
+</helmet>
+
+<div style="display:flex;flex-direction:column;gap:72px;padding:48px 56px 120px;color:#1B1A17;font-size:14px;line-height:1.5">
+
+  <header style="display:flex;flex-direction:column;gap:20px;max-width:880px">
+    <div style="display:flex;align-items:center;gap:10px"><div style="width:30px;height:30px;border-radius:9px;background:#15697B;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div><span style="font-weight:800;font-size:20px;letter-spacing:-0.02em">Notas</span><span style="font-size:13px;color:#6B675F;margin-left:4px">· rediseño de interfaz · octubre 2026</span></div>
+    <h1 style="margin:0;font-size:36px;font-weight:800;letter-spacing:-0.03em;line-height:1.1;text-wrap:pretty">Calma, foco y rapidez: un gestor de tareas que también usa la IA.</h1>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;font-size:13.5px;color:#3E3B35">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B675F">Qué cambia y por qué</div>
+        <p style="margin:0;text-wrap:pretty"><strong>Acento azul petróleo</strong> (#15697B / #5FBBCD en oscuro) sobre una base cálida de papel. El petróleo es serio sin ser corporativo, se distingue del azul de prioridad baja y del violeta genérico actual, y da buen contraste en los dos temas.</p>
+        <p style="margin:0;text-wrap:pretty"><strong>Manrope</strong> para toda la interfaz (cifras tabulares nativas, buena legibilidad a 13–14 px) y <strong>Geist Mono</strong> solo para URLs, tokens y códigos.</p>
+        <p style="margin:0;text-wrap:pretty"><strong>Filas aireadas</strong> de 48 px con dos líneas: título + metadatos (lista, etiquetas). El checkbox redondo con borde de prioridad es el único elemento de color fuerte en la lista; la fecha es lo segundo que se lee.</p>
+        <p style="margin:0;text-wrap:pretty"><strong>El detalle deja de ser formulario</strong>: título grande editable en el lugar, propiedades como botones-píldora, subtareas con barra de progreso, pie con «Mandar a la papelera».</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B675F">Supuestos</div>
+        <p style="margin:0;text-wrap:pretty">La estructura de 3 columnas y las rutas actuales se mantienen (<code style="font-family:'Geist Mono',monospace;font-size:12px">/app/today</code>, <code style="font-family:'Geist Mono',monospace;font-size:12px">/app/list/:id</code>…). Las vistas mixtas muestran el nombre de la lista; la vista de una lista no.</p>
+        <p style="margin:0;text-wrap:pretty">Indicador «creada por IA»: chispa petróleo junto al título en la fila; en el detalle, una etiqueta «Creada por Claude» con fecha. Pide guardar <code style="font-family:'Geist Mono',monospace;font-size:12px">createdVia</code> (web / mcp:cliente) en la tarea.</p>
+        <p style="margin:0;text-wrap:pretty">Todo es reproducible con Tailwind 4: tokens como variables CSS en <code style="font-family:'Geist Mono',monospace;font-size:12px">@theme</code>, íconos Lucide, sin imágenes. El tema sigue a <code style="font-family:'Geist Mono',monospace;font-size:12px">prefers-color-scheme</code> con opción manual en Configuración (a agregar).</p>
+        <p style="margin:0;text-wrap:pretty">Fecha de los mockups: sábado 10/10/2026. Hoy = 5 pendientes (4 de hoy + 1 vencida).</p>
+      </div>
+    </div>
+  </header>
+
+  <sc-if value="{{ showLight }}" hint-placeholder-val="{{ true }}">
+  <section data-screen-label="Tema claro" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:center;gap:12px"><span style="font-size:11px;font-weight:700;padding:4px 8px;border-radius:5px;background:#1B1A17;color:#fff;letter-spacing:.06em">CLARO</span><span style="font-size:13px;color:#6B675F">Escritorio 1200 px · celular 390 px · componentes</span></div>
+    <div style="--bg:#F7F5F1;--surface:#FFFFFF;--sidebar:#EFECE6;--fg:#1B1A17;--muted:#6B675F;--border:#E3DED5;--hover:#ECE8E1;--selected:#DDEBEE;--accent:#15697B;--accent-fg:#FFFFFF;--danger:#C23B30;--danger-bg:#FBECEA;--p-high:#C23B30;--p-med:#B86E0E;--p-low:#2F6BCB;--p-none:#8F8A80;--skeleton:#E8E4DD;--scrim:rgba(27,26,23,.45);--av-sofia:#B04A6E;--av-martin:#2F7D5B;--av-emir:#15697B;--av-fg:#FFFFFF;--toast-bg:#2A2926;--toast-fg:#F7F5F1;--toast-accent:#8FD3E1;--toast-danger:#F2958C;--shadow:0 1px 2px rgba(27,26,23,.05),0 10px 30px rgba(27,26,23,.07);--shadow-lg:0 2px 6px rgba(27,26,23,.08),0 20px 50px rgba(27,26,23,.18)">
+      <div style="--accent:{{ lAccent }};--selected:{{ lSelected }};--av-emir:{{ lAccent }}">
+        <dc-import name="NotasPantallas" hint-size="2480px,9000px"></dc-import>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ showDark }}" hint-placeholder-val="{{ true }}">
+  <section data-screen-label="Tema oscuro" style="display:flex;flex-direction:column;gap:20px;padding:40px;margin:0 -40px;border-radius:24px;background:#0E0E0D;width:max-content;min-width:2520px;box-sizing:border-box">
+    <div style="display:flex;align-items:center;gap:12px"><span style="font-size:11px;font-weight:700;padding:4px 8px;border-radius:5px;background:#ECE8E1;color:#1B1A17;letter-spacing:.06em">OSCURO</span><span style="font-size:13px;color:#A19C93">Mismas pantallas, tokens propios (no es el claro invertido): superficies cálidas, acento más claro, prioridades desaturadas.</span></div>
+    <div style="--bg:#161513;--surface:#1D1C19;--sidebar:#121110;--fg:#ECE8E1;--muted:#A19C93;--border:#2C2A26;--hover:#262420;--selected:#1A3139;--accent:#5FBBCD;--accent-fg:#0B1D22;--danger:#F07B70;--danger-bg:#3A1F1C;--p-high:#F07B70;--p-med:#E7A23C;--p-low:#74A8F3;--p-none:#7E796F;--skeleton:#26241F;--scrim:rgba(0,0,0,.6);--av-sofia:#E58AA8;--av-martin:#7FD1A4;--av-emir:#7CCBDB;--av-fg:#141311;--toast-bg:#ECE8E1;--toast-fg:#1B1A17;--toast-accent:#15697B;--toast-danger:#C23B30;--shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.45);--shadow-lg:0 2px 6px rgba(0,0,0,.5),0 24px 60px rgba(0,0,0,.6)">
+      <div style="--accent:{{ dAccent }};--selected:{{ dSelected }};--av-emir:{{ dAccent }}">
+        <dc-import name="NotasPantallas" hint-size="2480px,9000px"></dc-import>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  <section data-screen-label="Tokens" style="display:flex;flex-direction:column;gap:24px;max-width:1400px">
+    <h2 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-0.025em">Tokens de diseño</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:grid;grid-template-columns:150px 150px 150px 1fr;gap:12px;padding:0 12px 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B675F"><span>Color</span><span>Claro</span><span>Oscuro</span><span>Uso</span></div>
+        <sc-for list="{{ colors }}" as="c" hint-placeholder-count="12">
+          <div style="display:grid;grid-template-columns:150px 150px 150px 1fr;gap:12px;align-items:center;padding:7px 12px;border-radius:8px;background:#F7F5F1;font-size:12.5px">
+            <code style="font-family:'Geist Mono',monospace;font-size:12px">--{{ c.name }}</code>
+            <span style="display:flex;align-items:center;gap:8px"><span style="width:22px;height:22px;border-radius:6px;background:{{ c.light }};border:1px solid rgba(0,0,0,.08)"></span><code style="font-family:'Geist Mono',monospace;font-size:11.5px;color:#6B675F">{{ c.light }}</code></span>
+            <span style="display:flex;align-items:center;gap:8px;background:#161513;padding:4px 8px;border-radius:6px;margin:-4px 0"><span style="width:22px;height:22px;border-radius:6px;background:{{ c.dark }};border:1px solid rgba(255,255,255,.1)"></span><code style="font-family:'Geist Mono',monospace;font-size:11.5px;color:#A19C93">{{ c.dark }}</code></span>
+            <span style="color:#3E3B35">{{ c.use }}</span>
+          </div>
+        </sc-for>
+        <p style="margin:10px 12px 0;font-size:12.5px;color:#6B675F;text-wrap:pretty">Contraste verificado AA: texto (fg, muted, accent, danger) ≥ 4,5:1 sobre bg y surface en ambos temas; bordes de prioridad ≥ 3:1. Colores de lista (9) son fijos en los dos temas: #15697B #2F6FD6 #12A594 #2F8F5B #D08A1A #E0641C #C23B30 #C2559A #7A5AD6.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:28px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B675F;padding:0 12px 8px">Tipografía · Manrope + Geist Mono</div>
+          <sc-for list="{{ type }}" as="t" hint-placeholder-count="8">
+            <div style="display:grid;grid-template-columns:140px 1fr 190px;gap:16px;align-items:baseline;padding:8px 12px;border-radius:8px;background:#F7F5F1">
+              <code style="font-family:'Geist Mono',monospace;font-size:12px">{{ t.name }}</code>
+              <span style="font-size:{{ t.size }};font-weight:{{ t.weight }};letter-spacing:{{ t.ls }};line-height:{{ t.lh }};font-family:{{ t.family }};font-variant-numeric:tabular-nums;text-transform:{{ t.tt }}">{{ t.sample }}</span>
+              <span style="font-size:12px;color:#6B675F">{{ t.spec }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px">
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:12.5px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B675F">Espaciado (base 4)</div>
+            <div style="display:flex;align-items:flex-end;gap:8px"><span style="width:4px;height:4px;background:#15697B"></span><span style="width:8px;height:8px;background:#15697B"></span><span style="width:12px;height:12px;background:#15697B"></span><span style="width:16px;height:16px;background:#15697B"></span><span style="width:20px;height:20px;background:#15697B"></span><span style="width:24px;height:24px;background:#15697B"></span><span style="width:32px;height:32px;background:#15697B"></span></div>
+            <div style="color:#3E3B35">4 · 8 · 12 · 16 · 20 · 24 · 32. Fila 48 px (9 px vertical + 2 líneas), gap entre filas 2 px, padding de columna 28 px, ancho máximo de lista 720–760 px.</div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B675F;margin-top:10px">Radios</div>
+            <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border:2px solid #15697B;border-radius:5px"></span><span style="width:28px;height:28px;border:2px solid #15697B;border-radius:8px"></span><span style="width:28px;height:28px;border:2px solid #15697B;border-radius:10px"></span><span style="width:28px;height:28px;border:2px solid #15697B;border-radius:12px"></span><span style="width:28px;height:28px;border:2px solid #15697B;border-radius:16px"></span><span style="width:28px;height:28px;border:2px solid #15697B;border-radius:50%"></span></div>
+            <div style="color:#3E3B35">5 chip · 8 nav/botón chico · 9 input/botón · 10 fila · 12 tarjeta · 16 diálogo · redondo (checkbox, avatar).</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:12.5px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B675F">Sombras</div>
+            <div style="display:flex;gap:16px"><div style="width:90px;height:56px;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(27,26,23,.05),0 10px 30px rgba(27,26,23,.07);display:flex;align-items:center;justify-content:center;font-size:11px;color:#6B675F">shadow</div><div style="width:90px;height:56px;border-radius:12px;background:#fff;box-shadow:0 2px 6px rgba(27,26,23,.08),0 20px 50px rgba(27,26,23,.18);display:flex;align-items:center;justify-content:center;font-size:11px;color:#6B675F">shadow-lg</div></div>
+            <div style="color:#3E3B35">shadow: marcos y tarjetas flotantes. shadow-lg: diálogos, menús, toast, cajón. En oscuro se duplica la opacidad.</div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B675F;margin-top:10px">Duraciones y curvas</div>
+            <div style="color:#3E3B35;display:flex;flex-direction:column;gap:3px"><span><code style="font-family:'Geist Mono',monospace;font-size:12px">fast 120 ms</code> hover, foco, color</span><span><code style="font-family:'Geist Mono',monospace;font-size:12px">base 200 ms</code> checkbox, chips, menús</span><span><code style="font-family:'Geist Mono',monospace;font-size:12px">slow 280 ms</code> fila que sale, panel de detalle, cajón</span><span><code style="font-family:'Geist Mono',monospace;font-size:12px">ease-out cubic-bezier(.2,.8,.2,1)</code> · <code style="font-family:'Geist Mono',monospace;font-size:12px">spring cubic-bezier(.34,1.4,.64,1)</code> solo en el checkbox</span><span>Con <code style="font-family:'Geist Mono',monospace;font-size:12px">prefers-reduced-motion</code>: sin escala ni desplazamiento, solo fundidos de 120 ms.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="Interacción" style="display:flex;flex-direction:column;gap:20px;max-width:1400px">
+    <h2 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-0.025em">Notas de interacción</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;font-size:13.5px;color:#3E3B35">
+      <div style="display:flex;flex-direction:column;gap:8px;padding:18px 20px;border-radius:14px;background:#F7F5F1"><div style="font-weight:700;color:#1B1A17">Completar una tarea</div><p style="margin:0;text-wrap:pretty">Clic en el checkbox: se encoge a 0,86, se llena de acento con un rebote a 1,14 y aparece el tilde (200 ms, curva spring). El título se tacha y atenúa en 120 ms. La fila espera 600 ms (margen para deshacer con otro clic) y luego baja su altura a 0 con fundido en 280 ms; las de abajo suben con ella. En «Completadas» la animación es la inversa y la fila vuelve a la vista de origen. Atajo: espacio sobre la fila enfocada.</p></div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:18px 20px;border-radius:14px;background:#F7F5F1"><div style="font-weight:700;color:#1B1A17">Abrir el detalle</div><p style="margin:0;text-wrap:pretty">Clic en el título o Enter sobre la fila. La fila pasa a «seleccionada» (fondo petróleo claro) y el panel entra desde la derecha en 280 ms con fundido; si ya estaba abierto solo cambia el contenido. Esc o la X lo cierran y devuelven el foco a la fila. En celular el detalle ocupa la pantalla y entra desde la derecha; el botón ← y el gesto de volver lo cierran. Todo guarda al salir del campo o con Enter; el pie muestra «Guardando…» y después «Modificada hace un momento».</p></div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:18px 20px;border-radius:14px;background:#F7F5F1"><div style="font-weight:700;color:#1B1A17">Borrar y deshacer</div><p style="margin:0;text-wrap:pretty">«Mandar a la papelera» no pide confirmación: la fila sale igual que al completar y aparece el toast abajo a la izquierda con «Deshacer» durante 6 s (la barra se detiene al pasar el mouse). Deshacer restaura la tarea en su lugar con un fundido. Acciones sin vuelta atrás (vaciar papelera, borrar lista, revocar token, desconectar app) sí confirman con un diálogo pequeño con botón de peligro. Atajo: Supr / ⌫ sobre la fila enfocada.</p></div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:18px 20px;border-radius:14px;background:#F7F5F1"><div style="font-weight:700;color:#1B1A17">Agregado rápido</div><p style="margin:0;text-wrap:pretty">N o clic enfoca el campo. Mientras se escribe, las partes detectadas se tiñen de acento dentro del texto y aparecen chips debajo (fecha, prioridad, etiquetas, lista destino). Enter crea la tarea: aparece arriba de su grupo con un fundido de 200 ms y el campo queda enfocado para seguir cargando. Esc limpia. Si falla, el texto vuelve al campo con un toast de error.</p></div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:18px 20px;border-radius:14px;background:#F7F5F1"><div style="font-weight:700;color:#1B1A17">Cambios hechos por la IA</div><p style="margin:0;text-wrap:pretty">La web revalida al volver a la pestaña y cada 30 s. Una tarea creada o modificada por un cliente MCP entra con el mismo fundido y, si la pestaña está visible, muestra un toast discreto «Claude completó «Pagar la luz»» con «Ver». En la fila queda la chispa; en el detalle, la etiqueta con cliente y fecha. Nunca se mueve nada bajo el cursor: si el usuario está editando, el cambio se aplica al soltar el foco.</p></div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:18px 20px;border-radius:14px;background:#F7F5F1"><div style="font-weight:700;color:#1B1A17">Teclado y accesibilidad</div><p style="margin:0;text-wrap:pretty">↑↓ recorren filas, Enter abre, espacio completa, Supr borra, E edita título, 1–4 cambian prioridad. Anillo de foco de 2 px en acento con 2 px de separación, en todo. Áreas táctiles ≥ 44 px en celular (filas 48, botones de barra 44). Prioridad = color + nombre + bandera en el detalle; vencida = rojo + ícono de alerta; compartida = ícono de personas + texto para lector de pantalla.</p></div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;mostrar&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ambos&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;ambos&quot;,&quot;claro&quot;,&quot;oscuro&quot;],&quot;section&quot;:&quot;Vista&quot;},&quot;acento&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;petróleo&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;petróleo&quot;,&quot;oliva&quot;,&quot;terracota&quot;],&quot;section&quot;:&quot;Color&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const show = this.props.mostrar ?? 'ambos';
+    const AC = {
+      'petróleo': { l: ['#15697B', '#DDEBEE'], d: ['#5FBBCD', '#1A3139'] },
+      'oliva': { l: ['#5A6E22', '#E6EBD6'], d: ['#B6C96A', '#2A3119'] },
+      'terracota': { l: ['#A6462A', '#F5E1D8'], d: ['#E89676', '#3A231B'] },
+    };
+    const a = AC[this.props.acento] || AC['petróleo'];
+    const colors = [
+      { name: 'bg', light: '#F7F5F1', dark: '#161513', use: 'Fondo de la app y columna de lista' },
+      { name: 'surface', light: '#FFFFFF', dark: '#1D1C19', use: 'Panel de detalle, tarjetas, inputs, diálogos' },
+      { name: 'sidebar', light: '#EFECE6', dark: '#121110', use: 'Barra lateral y fondo de login' },
+      { name: 'fg', light: '#1B1A17', dark: '#ECE8E1', use: 'Texto principal' },
+      { name: 'muted', light: '#6B675F', dark: '#A19C93', use: 'Texto secundario, íconos, metadatos' },
+      { name: 'border', light: '#E3DED5', dark: '#2C2A26', use: 'Bordes y separadores' },
+      { name: 'hover', light: '#ECE8E1', dark: '#262420', use: 'Hover de filas y nav, chips de etiqueta' },
+      { name: 'selected', light: '#DDEBEE', dark: '#1A3139', use: 'Fila/nav activa, chips de detección, anillo de foco en inputs' },
+      { name: 'accent', light: '#15697B', dark: '#5FBBCD', use: 'Botón primario, links, fecha de hoy, checkbox completado, chispa IA' },
+      { name: 'accent-fg', light: '#FFFFFF', dark: '#0B1D22', use: 'Texto sobre acento' },
+      { name: 'danger', light: '#C23B30', dark: '#F07B70', use: 'Vencidas, errores, acciones destructivas' },
+      { name: 'danger-bg', light: '#FBECEA', dark: '#3A1F1C', use: 'Fondo de alertas y hover de botón peligro fantasma' },
+      { name: 'p-high', light: '#C23B30', dark: '#F07B70', use: 'Prioridad alta (borde del checkbox, bandera)' },
+      { name: 'p-med', light: '#B86E0E', dark: '#E7A23C', use: 'Prioridad media' },
+      { name: 'p-low', light: '#2F6BCB', dark: '#74A8F3', use: 'Prioridad baja' },
+      { name: 'p-none', light: '#8F8A80', dark: '#7E796F', use: 'Sin prioridad' },
+      { name: 'skeleton', light: '#E8E4DD', dark: '#26241F', use: 'Bloques de carga' },
+      { name: 'toast-bg / fg', light: '#2A2926', dark: '#ECE8E1', use: 'Toast invertido respecto al tema' },
+    ];
+    const type = [
+      { name: 'display', sample: 'Próximos 7 días', size: '24px', weight: 800, ls: '-0.025em', lh: 1.2, family: 'Manrope', tt: 'none', spec: '24 / 800 / −2,5 % · títulos de vista' },
+      { name: 'title', sample: 'Revisar presupuesto Q4', size: '20px', weight: 700, ls: '-0.015em', lh: 1.3, family: 'Manrope', tt: 'none', spec: '20 / 700 · título en el detalle' },
+      { name: 'heading', sample: 'Editar lista', size: '18px', weight: 800, ls: '-0.02em', lh: 1.3, family: 'Manrope', tt: 'none', spec: '18 / 800 · diálogos' },
+      { name: 'body', sample: 'Comprar yerba y pan', size: '14px', weight: 500, ls: '0', lh: 1.45, family: 'Manrope', tt: 'none', spec: '14 / 500 / 1,45 · filas, inputs, nav' },
+      { name: 'body-sm', sample: 'Comparar con el real de Q3 antes de la reunión.', size: '13.5px', weight: 400, ls: '0', lh: 1.55, family: 'Manrope', tt: 'none', spec: '13,5 / 400 / 1,55 · descripción, ayuda' },
+      { name: 'caption', sample: 'Hoy 15:00 · 1/3 · 20/10', size: '12.5px', weight: 600, ls: '0', lh: 1.4, family: 'Manrope', tt: 'none', spec: '12,5 / 600 · fechas y contadores, tabular-nums' },
+      { name: 'meta', sample: 'Casa · #casa · Modificada hace 2 h', size: '12px', weight: 500, ls: '0', lh: 1.4, family: 'Manrope', tt: 'none', spec: '12 / 500 · metadatos de fila' },
+      { name: 'overline', sample: 'Vencidas', size: '11.5px', weight: 700, ls: '.08em', lh: 1.4, family: 'Manrope', tt: 'uppercase', spec: '11,5 / 700 / +8 % · grupos y secciones' },
+      { name: 'mono', sample: 'https://notas.app/mcp', size: '13px', weight: 400, ls: '0', lh: 1.4, family: "'Geist Mono', monospace", tt: 'none', spec: 'Geist Mono 13 · URLs, tokens, códigos' },
+    ];
+    return {
+      showLight: show !== 'oscuro', showDark: show !== 'claro',
+      lAccent: a.l[0], lSelected: a.l[1], dAccent: a.d[0], dSelected: a.d[1],
+      colors, type,
+    };
+  }
+}
+</script>
+</body>
+</html>
