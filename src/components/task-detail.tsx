@@ -9,6 +9,7 @@ import type { ListMember } from '@/core/members';
 import type { TaskWithDetails, UpdateTaskInput } from '@/core/tasks';
 import type { ActionResult } from '@/lib/action-result';
 import { createdViaClient, formatAgo, formatDetailDate, formatShortDate, localTime, trashNote } from '@/lib/format';
+import { useSyncedField } from '@/lib/synced-field';
 import { moveTaskAction, restoreTaskAction, toggleTaskAction, updateTaskAction } from '@/app/app/actions';
 import { Avatar } from './avatar';
 import { PriorityCheckbox } from './priority-checkbox';
@@ -68,8 +69,8 @@ export function TaskDetail({
   const inTrash = task.deletedAt !== null;
   const pathname = usePathname();
   const { closeDetail, trash, hide, consumeEditTitle } = useWorkspace();
-  const [title, setTitle] = useState(task.title);
-  const [description, setDescription] = useState(task.description);
+  const { value: title, setValue: setTitle, baseline: titleBase } = useSyncedField(task.title);
+  const { value: description, setValue: setDescription, baseline: descriptionBase } = useSyncedField(task.description);
   const [date, setDate] = useState(task.dueDate ?? '');
   const [time, setTime] = useState(task.dueTime ?? '');
   const [priority, setPriority] = useState(task.priority);
@@ -148,9 +149,18 @@ export function TaskDetail({
   function saveTitle() {
     // El título se edita en un textarea (para que pueda ocupar varias líneas), pero no lleva saltos de línea.
     const clean = title.replace(/\s*\n\s*/g, ' ').trim();
-    if (!clean) { setTitle(task.title); return; }
+    if (!clean) { setTitle(titleBase.current); return; }
     setTitle(clean);
-    if (clean !== task.title) save({ title: clean });
+    if (clean === titleBase.current) return;
+    const previous = titleBase.current;
+    titleBase.current = clean;
+    save({ title: clean }, () => { titleBase.current = previous; setTitle(previous); });
+  }
+  function saveDescription() {
+    if (description === descriptionBase.current) return;
+    const previous = descriptionBase.current;
+    descriptionBase.current = description;
+    save({ description }, () => { descriptionBase.current = previous; setDescription(previous); });
   }
   function move(newListId: string) {
     setListId(newListId);
@@ -314,7 +324,7 @@ export function TaskDetail({
 
         <textarea
           ref={descriptionRef} value={description} onChange={(e) => setDescription(e.target.value)} aria-label="Descripción"
-          onBlur={() => description !== task.description && save({ description })}
+          onBlur={saveDescription}
           placeholder="Agregar una descripción…" rows={2}
           className="min-h-[3.2em] w-full shrink-0 resize-none bg-transparent text-body leading-[1.6] text-fg outline-none [field-sizing:content] placeholder:text-muted focus-visible:outline-none"
         />

@@ -4,22 +4,25 @@ import { Check, Plus, X } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
 import type { Subtask, TaskWithDetails } from '@/core/tasks';
 import type { ActionResult } from '@/lib/action-result';
+import { useSyncedField } from '@/lib/synced-field';
 import { addSubtaskAction, deleteSubtaskAction, updateSubtaskAction } from '@/app/app/actions';
 import { sectionLabel } from './ui';
 
 type Run = (fn: () => Promise<ActionResult<unknown>>, onFail?: () => void) => void;
 
 function SubtaskRow({ subtask, index, run }: { subtask: Subtask; index: number; run: Run }) {
-  const [title, setTitle] = useState(subtask.title);
+  const { value: title, setValue: setTitle, baseline: titleBase } = useSyncedField(subtask.title);
   const [done, setDone] = useState(subtask.done);
-  useEffect(() => setTitle(subtask.title), [subtask.title]);
   useEffect(() => setDone(subtask.done), [subtask.done]);
 
   function saveTitle() {
     const clean = title.trim();
-    if (!clean) { setTitle(subtask.title); return; }
+    if (!clean) { setTitle(titleBase.current); return; }
     setTitle(clean);
-    if (clean !== subtask.title) run(() => updateSubtaskAction(subtask.id, { title: clean }), () => setTitle(subtask.title));
+    if (clean === titleBase.current) return;
+    const previous = titleBase.current;
+    titleBase.current = clean;
+    run(() => updateSubtaskAction(subtask.id, { title: clean }), () => { titleBase.current = previous; setTitle(previous); });
   }
 
   return (
