@@ -46,11 +46,11 @@ function safeDecode(value: string): string {
 
 /** Ítem de navegación: 32 px por defecto (36 las listas propias, 30 las etiquetas), activo en petróleo claro. */
 function NavLink({
-  href, active, height = 'h-8', children,
-}: { href: string; active: boolean; height?: string; children: React.ReactNode }) {
+  href, active, height = 'h-8', describedBy, children,
+}: { href: string; active: boolean; height?: string; describedBy?: string; children: React.ReactNode }) {
   return (
     <Link
-      href={href} aria-current={active ? 'page' : undefined}
+      href={href} aria-current={active ? 'page' : undefined} aria-describedby={describedBy}
       className={`flex items-center gap-2.5 rounded-nav px-2.5 transition-colors duration-120 ${height} ${active ? 'bg-selected font-semibold text-accent' : 'font-medium text-fg hover:bg-hover'}`}
     >
       {children}
@@ -106,8 +106,12 @@ export function Sidebar({
     const name = prompt('Nuevo nombre de la carpeta', folder.name);
     if (name && name !== folder.name) {
       startTransition(async () => {
-        const result = await renameFolderAction(folder.id, name);
-        if (!result.ok) toast({ tone: 'error', message: result.error });
+        try {
+          const result = await renameFolderAction(folder.id, name);
+          if (!result.ok) toast({ tone: 'error', message: result.error });
+        } catch {
+          toast({ tone: 'error', message: 'No se pudo renombrar la carpeta. Probá de nuevo.' });
+        }
       });
     }
   }
@@ -116,9 +120,14 @@ export function Sidebar({
     const folder = folderToDelete;
     if (!folder) return;
     startTransition(async () => {
-      const result = await deleteFolderAction(folder.id);
-      setFolderToDelete(null);
-      if (!result.ok) toast({ tone: 'error', message: result.error });
+      try {
+        const result = await deleteFolderAction(folder.id);
+        if (!result.ok) toast({ tone: 'error', message: result.error });
+      } catch {
+        toast({ tone: 'error', message: 'No se pudo borrar la carpeta. Probá de nuevo.' });
+      } finally {
+        setFolderToDelete(null);
+      }
     });
   }
 
@@ -137,11 +146,15 @@ export function Sidebar({
           const n = count ? counts[count] : 0;
           return (
             <li key={href}>
-              <NavLink href={href} active={active}>
+              <NavLink href={href} active={active} describedBy={n > 0 ? `count-${count}` : undefined}>
                 <Icon size={16} aria-hidden="true" className={`shrink-0 ${active ? '' : 'opacity-85'}`} />
                 <span className="min-w-0 flex-1 truncate">{label}</span>
                 {n > 0 && (
-                  <span aria-hidden="true" className="text-meta font-medium tabular-nums text-muted">{n > 99 ? '99+' : n}</span>
+                  <>
+                    <span aria-hidden="true" className="text-meta font-medium tabular-nums text-muted">{n > 99 ? '99+' : n}</span>
+                    {/* Descripción (no nombre): el link sigue llamándose "Hoy" y el lector agrega "2 pendientes". */}
+                    <span id={`count-${count}`} className="sr-only">{n} {n === 1 ? 'pendiente' : 'pendientes'}</span>
+                  </>
                 )}
               </NavLink>
             </li>

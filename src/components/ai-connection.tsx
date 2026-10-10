@@ -2,8 +2,10 @@
 
 import { Check, Copy, KeyRound } from 'lucide-react';
 import { useState, useTransition } from 'react';
+import { firstChar } from '@/lib/initials';
 import { createApiTokenAction, revokeApiTokenAction, revokeOAuthConnectionAction } from '@/app/app/actions';
 import { ConfirmDialog } from './confirm-dialog';
+import { useToast } from './toast';
 import { btn, field, sectionLabel } from './ui';
 
 /** El servidor arma `detail` en la zona del usuario: así no hay diferencias de fechas al hidratar. */
@@ -60,17 +62,22 @@ export function AiConnection({ mcpUrl, tokens, connections }: {
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Pending | null>(null);
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
 
   function create(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const result = await createApiTokenAction(name);
-      if (result.ok) {
-        setNewToken(result.data.token);
-        setName('');
-        setError(null);
-      } else {
-        setError(result.error);
+      try {
+        const result = await createApiTokenAction(name);
+        if (result.ok) {
+          setNewToken(result.data.token);
+          setName('');
+          setError(null);
+        } else {
+          setError(result.error);
+        }
+      } catch {
+        toast({ tone: 'error', message: 'No se pudo crear el token. Probá de nuevo.' });
       }
     });
   }
@@ -79,11 +86,16 @@ export function AiConnection({ mcpUrl, tokens, connections }: {
     const target = confirm;
     if (!target) return;
     startTransition(async () => {
-      const result = target.kind === 'token'
-        ? await revokeApiTokenAction(target.row.id)
-        : await revokeOAuthConnectionAction(target.row.clientId);
-      setConfirm(null);
-      setError(result.ok ? null : result.error);
+      try {
+        const result = target.kind === 'token'
+          ? await revokeApiTokenAction(target.row.id)
+          : await revokeOAuthConnectionAction(target.row.clientId);
+        setError(result.ok ? null : result.error);
+      } catch {
+        toast({ tone: 'error', message: target.kind === 'token' ? 'No se pudo revocar el token. Probá de nuevo.' : 'No se pudo desconectar la app. Probá de nuevo.' });
+      } finally {
+        setConfirm(null);
+      }
     });
   }
 
@@ -109,7 +121,7 @@ export function AiConnection({ mcpUrl, tokens, connections }: {
             {connections.map((c) => (
               <li key={c.clientId} className={ROW}>
                 <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-nav bg-hover text-[13px] font-extrabold">
-                  {c.clientName.trim().charAt(0).toUpperCase() || '?'}
+                  {firstChar(c.clientName.trim()).toUpperCase() || '?'}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{c.clientName}</p>
