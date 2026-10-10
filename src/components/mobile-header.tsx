@@ -17,7 +17,7 @@ export function MobileHeader({ title, subtitle }: { title: React.ReactNode; subt
         <Menu size={22} aria-hidden="true" />
       </button>
       <div className="min-w-0 flex-1">
-        <h1 className="flex items-center gap-2 truncate text-[22px] font-extrabold leading-[1.15] tracking-[-0.025em]">{title}</h1>
+        <h1 tabIndex={-1} className="flex items-center outline-none gap-2 truncate text-[22px] font-extrabold leading-[1.15] tracking-[-0.025em]">{title}</h1>
         {subtitle && <p className="truncate text-caption text-muted">{subtitle}</p>}
       </div>
       <Link href="/app/settings" aria-label="Tu cuenta" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full">

@@ -85,7 +85,9 @@ export function WorkspaceProvider({
     if (selectedId || !returnFocusTo.current) return;
     const id = returnFocusTo.current;
     returnFocusTo.current = null;
-    document.querySelector<HTMLElement>(`[data-task-link="${id}"]`)?.focus();
+    const row = id ? document.querySelector<HTMLElement>(`[data-task-link="${id}"]`) : null;
+    if (row) row.focus();
+    else [...document.querySelectorAll<HTMLElement>('h1[tabindex="-1"]')].find((h) => h.offsetParent !== null)?.focus();
   }, [selectedId]);
 
   const undo = useCallback(async (id: string) => {
@@ -101,7 +103,14 @@ export function WorkspaceProvider({
   const trashRef = useRef<(task: TaskWithDetails) => void>(() => {});
   const trash = useCallback((task: TaskWithDetails) => {
     hide(task.id);
-    if (selectedId === task.id) router.push(pathname, { scroll: false });
+    if (selectedId === task.id) {
+      // El detalle desaparece con la tarea: el foco pasa a la fila siguiente (o la anterior) y, si no queda ninguna, al título de la vista.
+      const links = [...document.querySelectorAll<HTMLElement>('[data-task-link]')].filter((l) => !l.closest('[inert]'));
+      const at = links.findIndex((l) => l.dataset.taskLink === task.id);
+      const neighbour = at === -1 ? undefined : links[at + 1] ?? links[at - 1];
+      returnFocusTo.current = neighbour?.dataset.taskLink ?? '';
+      router.push(pathname, { scroll: false });
+    }
     void (async () => {
       let error: string | null = null;
       try {
