@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { avatarTone, initials } from '@/lib/initials';
+import { avatarTone, firstChar, initials } from '@/lib/initials';
 
 describe('initials', () => {
   it('dos palabras del nombre → sus iniciales', () => {
@@ -26,5 +26,13 @@ describe('initials', () => {
 
   it('no parte emojis ni caracteres compuestos por dos unidades', () => {
     expect(initials({ name: '😀 Feliz', email: 'x@example.com' })).toBe('😀F');
+  });
+});
+
+describe('firstChar', () => {
+  it('no parte pares sustitutos', () => {
+    expect(firstChar('😀 App')).toBe('😀');
+    expect(firstChar('𝔄bc')).toBe('𝔄');
+    expect(firstChar('')).toBe('');
   });
 });

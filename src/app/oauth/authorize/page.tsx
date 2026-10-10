@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { authorizationParamsFrom, isLoopbackRedirect, validateAuthorizationRequest } from '@/core/oauth';
 import { getDb } from '@/db';
 import { btn, sectionLabel } from '@/components/ui';
+import { firstChar } from '@/lib/initials';
 import { appUrl, mcpResourceUrl } from '@/lib/app-url';
 import { getCurrentUser } from '@/lib/auth';
 import { errorPageView, loginUrlFor } from '@/lib/oauth-consent';
@@ -83,14 +84,14 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Se
     <Shell>
       <div className="flex items-center gap-2.5" aria-hidden="true">
         <span className="flex h-11 w-11 items-center justify-center rounded-card bg-hover text-[18px] font-extrabold">
-          {clientName.trim().charAt(0).toUpperCase() || '?'}
+          {firstChar(clientName.trim()).toUpperCase() || '?'}
         </span>
         <span className="text-muted">⇄</span>
         <span className="flex h-11 w-11 items-center justify-center rounded-card bg-accent text-accent-fg">
           <Check size={22} strokeWidth={3} />
         </span>
       </div>
-      <h1 className="text-[21px] font-extrabold leading-[1.25] tracking-[-0.02em] text-pretty">
+      <h1 className="text-[21px] font-extrabold leading-[1.25] tracking-[-0.02em] text-pretty [overflow-wrap:anywhere]">
         {clientName} quiere acceder a tus tareas de Notas
       </h1>
       <div className="flex flex-col gap-2.5 rounded-card border border-line bg-bg p-3.5">
@@ -134,7 +135,7 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Se
           Permitir
         </button>
       </form>
-      <p className="text-center text-meta text-pretty text-muted">
+      <p className="text-center text-meta text-pretty text-muted [overflow-wrap:anywhere]">
         Podés desconectar {clientName} cuando quieras desde Configuración.
       </p>
     </Shell>

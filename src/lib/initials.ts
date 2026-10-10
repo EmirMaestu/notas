@@ -3,6 +3,11 @@ function firstChars(text: string, n: number): string {
   return Array.from(text).slice(0, n).join('');
 }
 
+/** Primer carácter visible (por punto de código: no parte pares sustitutos como los emojis). */
+export function firstChar(text: string): string {
+  return firstChars(text, 1);
+}
+
 /** Iniciales del avatar (como el diseño): dos palabras → dos letras, una → una, sin nombre → la del email. */
 export function initials(person: { name: string; email: string }): string {
   const words = person.name.trim().split(/\s+/).filter(Boolean);
