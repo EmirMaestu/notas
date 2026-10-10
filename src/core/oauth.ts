@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { type SQL, and, asc, eq, gt, isNull, lt, max, notExists, or, sql } from 'drizzle-orm';
+import { type SQL, and, asc, eq, gt, isNull, lt, max, min, notExists, or, sql } from 'drizzle-orm';
 import { oauthClients, oauthCodes, oauthTokens } from '@/db/schema';
 import type { DB } from '@/db/types';
 import { NotFoundError } from './errors';
@@ -533,12 +533,19 @@ export async function authenticateAccessToken(
 export interface OAuthConnection {
   clientId: string;
   clientName: string;
+  /** Cuándo se canjeó el código que originó la conexión vigente más vieja. */
+  connectedAt: Date | null;
   lastUsedAt: Date | null;
 }
 
 export async function listOAuthConnections(db: DB, userId: string, now: Date = new Date()): Promise<OAuthConnection[]> {
   return db
-    .select({ clientId: oauthClients.clientId, clientName: oauthClients.clientName, lastUsedAt: max(oauthTokens.lastUsedAt) })
+    .select({
+      clientId: oauthClients.clientId,
+      clientName: oauthClients.clientName,
+      connectedAt: min(oauthTokens.familyCreatedAt),
+      lastUsedAt: max(oauthTokens.lastUsedAt),
+    })
     .from(oauthTokens)
     .innerJoin(oauthClients, eq(oauthClients.clientId, oauthTokens.clientId))
     .where(and(eq(oauthTokens.userId, userId), isNull(oauthTokens.revokedAt), gt(oauthTokens.refreshExpiresAt, now)))
