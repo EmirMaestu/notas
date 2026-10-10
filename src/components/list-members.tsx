@@ -70,7 +70,7 @@ export function ListMembers({ listId, isOwner }: { listId: string; isOwner: bool
         <ul className="mb-3 space-y-1.5 text-sm">
           {members.map((m) => (
             <li key={m.id} className="flex items-center gap-2">
-              <Avatar person={m} />
+              <Avatar person={m} size={26} />
               <span className="min-w-0 flex-1 truncate">
                 {m.name || m.email}
                 {m.name && <span className="text-muted"> · {m.email}</span>}

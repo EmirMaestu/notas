@@ -51,7 +51,7 @@ export function TaskItem({
             )}
             {task.assignee && (
               <>
-                <Avatar person={task.assignee} size="sm" />
+                <Avatar person={task.assignee} size={24} />
                 <span className="sr-only">Asignada a {task.assignee.name || task.assignee.email}</span>
               </>
             )}

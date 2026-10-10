@@ -27,7 +27,7 @@ export function AppShell({ sidebar, children }: { sidebar: React.ReactNode; chil
     if (!open) return;
     asideRef.current?.querySelector('a')?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || document.querySelector('[role="dialog"]')) return; // el diálogo abierto atiende su propio Escape
+      if (e.key !== 'Escape' || document.querySelector('[aria-modal="true"]')) return; // el diálogo abierto atiende su propio Escape
       setOpen(false);
       menuButtonRef.current?.focus();
     };

@@ -3,10 +3,26 @@
 import { X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { btn } from './ui';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+/** Diálogos abiertos, del más viejo al más nuevo: solo el de arriba atiende Escape y Tab. */
+const openDialogs: symbol[] = [];
+
+export function Modal({
+  title, titleAdornment, onClose, children, footer, size = 'md', role = 'dialog',
+}: {
+  title: string;
+  /** Algo antes del título (p. ej. el punto de color de la lista). */
+  titleAdornment?: React.ReactNode;
+  onClose: () => void;
+  children: React.ReactNode;
+  /** Franja inferior con los botones. */
+  footer?: React.ReactNode;
+  size?: 'sm' | 'md';
+  role?: 'dialog' | 'alertdialog';
+}) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const backdropPressed = useRef(false);
@@ -20,11 +36,18 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
+    const token = Symbol('dialog');
+    openDialogs.push(token);
+    const isTop = () => openDialogs[openDialogs.length - 1] === token;
     if (!dialog.contains(document.activeElement)) {
       dialog.querySelector<HTMLElement>(FOCUSABLE)?.focus();
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') return onCloseRef.current();
+      if (!isTop()) return; // hay otro diálogo encima: que lo atienda él
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        return onCloseRef.current();
+      }
       if (e.key !== 'Tab') return;
       const items = [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE)];
       if (items.length === 0) return e.preventDefault();
@@ -44,6 +67,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
+      openDialogs.splice(openDialogs.indexOf(token), 1);
       if (previous?.isConnected) previous.focus();
     };
   }, [previous]);
@@ -58,19 +82,29 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
   // Portal al body: dentro de la barra lateral (con transform) un `fixed` se posicionaría respecto de ella.
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-scrim p-4"
       onMouseDown={(e) => { backdropPressed.current = e.target === e.currentTarget; }}
       onClick={(e) => { if (backdropPressed.current && e.target === e.currentTarget) onClose(); }}
     >
       <div
-        ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId}
-        className="w-full max-w-md rounded-xl border border-line bg-bg p-5 shadow-xl"
+        ref={dialogRef} role={role} aria-modal="true" aria-labelledby={titleId}
+        className={`flex max-h-[calc(100dvh-32px)] w-full flex-col rounded-dialog border border-line bg-surface text-fg shadow-pop ${size === 'sm' ? 'max-w-[400px]' : 'max-w-[480px]'}`}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 id={titleId} className="text-base font-semibold">{title}</h2>
-          <button onClick={onClose} aria-label="Cerrar" className="rounded p-1 hover:bg-hover"><X size={18} /></button>
+        <div className="flex shrink-0 items-center justify-between gap-3 px-5 pt-[18px]">
+          <h2 id={titleId} className="flex min-w-0 items-center gap-2.5 text-heading">
+            {titleAdornment}
+            <span className="truncate">{title}</span>
+          </h2>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className={`${btn.icon} h-8 w-8`}>
+            <X size={18} aria-hidden="true" />
+          </button>
         </div>
-        {children}
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-[18px]">{children}</div>
+        {footer && (
+          <div className="flex shrink-0 items-center gap-2.5 rounded-b-dialog border-t border-line bg-bg px-5 py-3.5">
+            {footer}
+          </div>
+        )}
       </div>
     </div>,
     document.body,
