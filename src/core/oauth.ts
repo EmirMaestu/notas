@@ -4,6 +4,7 @@ import { oauthClients, oauthCodes, oauthTokens } from '@/db/schema';
 import type { DB } from '@/db/types';
 import { NotFoundError } from './errors';
 import { generateSecret, safeEqual, sha256Base64Url, sha256Hex } from './secrets';
+import { stripHiddenChars } from './validation';
 
 /** Único scope: acceso completo a las listas y tareas del usuario. */
 export const OAUTH_SCOPE = 'tasks';
@@ -101,13 +102,10 @@ export function sameResource(candidate: string, expected: string): boolean {
 
 // ---------- Clientes (registro dinámico, RFC 7591) ----------
 
-/** Controles C0/DEL, marcas bidi y espacios de ancho cero: con ellos un nombre puede hacerse pasar por otro. */
-const HIDDEN_CHARS_RE = /[\x00-\x1f\x7f​-‏‪-‮⁦-⁩﻿]/g;
-
 function cleanClientName(value: unknown): string {
   if (value === undefined || value === null) return DEFAULT_CLIENT_NAME;
   if (typeof value !== 'string') throw new OAuthError('invalid_client_metadata', 'client_name debe ser texto');
-  const clean = value.replace(HIDDEN_CHARS_RE, '').trim().slice(0, 100);
+  const clean = stripHiddenChars(value).trim().slice(0, 100);
   return clean || DEFAULT_CLIENT_NAME;
 }
 
