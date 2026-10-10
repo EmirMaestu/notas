@@ -96,6 +96,14 @@ export function TaskWorkspace({
     </>
   ) : undefined;
 
+  const destinationList = context.listId ? list : lists.find((l) => l.isInbox);
+  const destination = { name: destinationList?.name ?? 'Bandeja', color: destinationList?.color ?? null };
+  const placeholder =
+    context.listId && list ? `Agregar tarea en ${list.name}…`
+    : context.view === 'inbox' ? 'Agregar tarea a la Bandeja…'
+    : context.tag ? `Agregar tarea con #${context.tag}…`
+    : 'Agregar tarea… «Pagar luz mañana !alta #casa»';
+
   return (
     <WorkspaceProvider tasks={tasks} selectedId={selected?.id}>
       <div className="flex h-full">
@@ -108,7 +116,7 @@ export function TaskWorkspace({
             <div
               className={`order-last shrink-0 border-t border-line bg-bg px-3 pb-7 pt-2.5 md:order-none md:mx-auto md:w-full md:border-t-0 md:bg-transparent md:px-7 md:pb-0 md:pt-[18px] ${maxWidth}`}
             >
-              <QuickAdd context={context} today={today} />
+              <QuickAdd context={context} today={today} placeholder={placeholder} destination={destination} />
             </div>
           )}
           <div className="min-h-0 flex-1 overflow-y-auto">

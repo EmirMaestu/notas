@@ -87,3 +87,32 @@ export function parseQuickAdd(text: string, today: string): QuickAddResult {
   const title = rest.replace(/\s+/g, ' ').replace(/\s+([,.;:!?)])/g, '$1').trim();
   return { title, dueDate, priority, tags };
 }
+
+export interface TextRange {
+  start: number;
+  end: number;
+}
+
+/**
+ * Rangos del texto original que `parseQuickAdd` interpreta (etiquetas, prioridades y la fecha), para resaltarlos
+ * mientras se escribe. Repite las mismas reglas, pero tapando con espacios lo ya reconocido para que las
+ * posiciones no se corran.
+ */
+export function quickAddHighlights(text: string, today: string): TextRange[] {
+  const padded = ` ${text} `;
+  let masked = padded;
+  const ranges: TextRange[] = [];
+  const take = (start: number, end: number) => {
+    masked = masked.slice(0, start) + ' '.repeat(end - start) + masked.slice(end);
+    ranges.push({ start: start - 1, end: end - 1 }); // -1: el espacio agregado al principio
+  };
+  for (const m of padded.matchAll(/(?<=\s)#[\p{L}\p{N}_-]+(?=[,.;:!?)]|\s)/gu)) take(m.index!, m.index! + m[0].length);
+  for (const m of masked.matchAll(/(?<=\s)!(?:alta|media|baja)(?=\s)/gi)) take(m.index!, m.index! + m[0].length);
+  for (const rule of DATE_RULES) {
+    const match = masked.match(rule.re);
+    if (!match || !rule.resolve(match, today)) continue;
+    take(match.index!, match.index! + match[0].length);
+    break;
+  }
+  return ranges.sort((a, b) => a.start - b.start);
+}
