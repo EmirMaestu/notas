@@ -53,6 +53,7 @@ describe('página: errores sin redirección automática', () => {
     const view = errorPageView(check as RedirectableError, ISSUER);
     expect(view.host).toBe('cliente.example.com');
     expect(view.message).toBeTruthy();
+    expect(view.code).toBe('unsupported_response_type');
     const url = new URL(view.href);
     expect(`${url.origin}${url.pathname}`).toBe(REDIRECT);
     expect(url.searchParams.get('error')).toBe('unsupported_response_type');

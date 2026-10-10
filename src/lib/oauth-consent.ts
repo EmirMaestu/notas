@@ -18,8 +18,11 @@ export function errorRedirectUrl(check: RedirectableError, issuer: string): stri
  * Datos para mostrar un error redirigible SIN redirigir: la página de autorización nunca manda al usuario
  * a otro sitio antes de que haga clic (evita que /oauth/authorize sirva de redirector abierto).
  */
-export function errorPageView(check: RedirectableError, issuer: string): { message: string; host: string; href: string } {
-  return { message: check.description, host: new URL(check.redirectUri).host, href: errorRedirectUrl(check, issuer) };
+export function errorPageView(check: RedirectableError, issuer: string): { code: string; message: string; host: string; href: string } {
+  return {
+    code: check.error, message: check.description, host: new URL(check.redirectUri).host,
+    href: errorRedirectUrl(check, issuer),
+  };
 }
 
 /** Ruta de vuelta al consentimiento, reconstruida solo con campos ya validados (para `/login?next=`). */

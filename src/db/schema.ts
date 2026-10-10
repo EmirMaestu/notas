@@ -70,6 +70,8 @@ export const tasks = pgTable('tasks', {
   createdAt: createdAt(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   externalId: text('external_id'),
+  /** Origen: 'web' (agregado rápido) o 'mcp:<cliente>' (client_name OAuth o nombre del token). NULL = anterior o importada. */
+  createdVia: text('created_via'),
 }, (t) => [
   index('tasks_user_idx').on(t.userId),
   index('tasks_list_idx').on(t.listId),

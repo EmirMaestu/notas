@@ -4,7 +4,7 @@ import { listMembers, tasks } from '@/db/schema';
 import { getAccessibleList } from '@/core/access';
 import type { DB } from '@/db/types';
 import { NotFoundError, ValidationError } from '@/core/errors';
-import { createFolder, createList, deleteList, getInbox, getList, listLists, updateList, type List } from '@/core/lists';
+import { createFolder, createList, deleteList, getInbox, getList, listLists, sharedListOwners, updateList, type List } from '@/core/lists';
 import type { PublicUser as User } from '@/core/users';
 import { createTestDb, createTestUser } from '../helpers/db';
 
@@ -119,5 +119,15 @@ describe('solo el dueño administra la lista', () => {
     expect(rows.find((t) => t.title === 'del miembro')!.assigneeId).toBeNull();
     await expect(getList(db, member.id, shared.id)).rejects.toThrow(NotFoundError);
     expect(await db.select().from(listMembers).where(eq(listMembers.listId, shared.id))).toEqual([]);
+  });
+});
+
+describe('sharedListOwners', () => {
+  it('devuelve el dueño de cada lista compartida conmigo (y nada de las propias)', async () => {
+    expect(await sharedListOwners(db, member.id)).toEqual({
+      [shared.id]: { id: owner.id, name: 'Emir', email: 'duenio@example.com' },
+    });
+    expect(await sharedListOwners(db, owner.id)).toEqual({});
+    expect(await sharedListOwners(db, stranger.id)).toEqual({});
   });
 });

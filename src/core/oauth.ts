@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { type SQL, and, asc, eq, gt, isNull, lt, max, notExists, or, sql } from 'drizzle-orm';
+import { type SQL, and, asc, eq, gt, isNull, lt, max, min, notExists, or, sql } from 'drizzle-orm';
 import { oauthClients, oauthCodes, oauthTokens } from '@/db/schema';
 import type { DB } from '@/db/types';
 import { NotFoundError } from './errors';
 import { generateSecret, safeEqual, sha256Base64Url, sha256Hex } from './secrets';
+import { stripHiddenChars } from './validation';
 
 /** Único scope: acceso completo a las listas y tareas del usuario. */
 export const OAUTH_SCOPE = 'tasks';
@@ -101,13 +102,10 @@ export function sameResource(candidate: string, expected: string): boolean {
 
 // ---------- Clientes (registro dinámico, RFC 7591) ----------
 
-/** Controles C0/DEL, marcas bidi y espacios de ancho cero: con ellos un nombre puede hacerse pasar por otro. */
-const HIDDEN_CHARS_RE = /[\x00-\x1f\x7f​-‏‪-‮⁦-⁩﻿]/g;
-
 function cleanClientName(value: unknown): string {
   if (value === undefined || value === null) return DEFAULT_CLIENT_NAME;
   if (typeof value !== 'string') throw new OAuthError('invalid_client_metadata', 'client_name debe ser texto');
-  const clean = value.replace(HIDDEN_CHARS_RE, '').trim().slice(0, 100);
+  const clean = stripHiddenChars(value).trim().slice(0, 100);
   return clean || DEFAULT_CLIENT_NAME;
 }
 
@@ -533,12 +531,19 @@ export async function authenticateAccessToken(
 export interface OAuthConnection {
   clientId: string;
   clientName: string;
+  /** Cuándo se canjeó el código que originó la conexión vigente más vieja. */
+  connectedAt: Date | null;
   lastUsedAt: Date | null;
 }
 
 export async function listOAuthConnections(db: DB, userId: string, now: Date = new Date()): Promise<OAuthConnection[]> {
   return db
-    .select({ clientId: oauthClients.clientId, clientName: oauthClients.clientName, lastUsedAt: max(oauthTokens.lastUsedAt) })
+    .select({
+      clientId: oauthClients.clientId,
+      clientName: oauthClients.clientName,
+      connectedAt: min(oauthTokens.familyCreatedAt),
+      lastUsedAt: max(oauthTokens.lastUsedAt),
+    })
     .from(oauthTokens)
     .innerJoin(oauthClients, eq(oauthClients.clientId, oauthTokens.clientId))
     .where(and(eq(oauthTokens.userId, userId), isNull(oauthTokens.revokedAt), gt(oauthTokens.refreshExpiresAt, now)))

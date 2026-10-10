@@ -1,6 +1,8 @@
+import { eq } from 'drizzle-orm';
+import { apiTokens } from '@/db/schema';
 import type { DB } from '@/db/types';
 import { PERSONAL_TOKEN_PREFIX, authenticateApiToken } from './api-tokens';
-import { ACCESS_TOKEN_PREFIX, authenticateAccessToken } from './oauth';
+import { ACCESS_TOKEN_PREFIX, authenticateAccessToken, getClient } from './oauth';
 
 /** Quién llama al MCP y con qué credencial. */
 export type BearerAuth =
@@ -24,4 +26,11 @@ export async function authenticateBearer(
     return found && { userId: found.userId, via: 'oauth', clientId: found.clientId };
   }
   return null;
+}
+
+/** Nombre visible de quien llama (para "Creada por …"): el client_name OAuth o el nombre del token personal. */
+export async function describeBearerClient(db: DB, auth: BearerAuth): Promise<string> {
+  if (auth.via === 'oauth') return (await getClient(db, auth.clientId))?.clientName ?? 'IA';
+  const [row] = await db.select({ name: apiTokens.name }).from(apiTokens).where(eq(apiTokens.id, auth.tokenId));
+  return row?.name ?? 'IA';
 }

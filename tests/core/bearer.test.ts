@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createApiToken, revokeApiToken } from '@/core/api-tokens';
-import { authenticateBearer } from '@/core/bearer';
+import { authenticateBearer, describeBearerClient } from '@/core/bearer';
 import { revokeToken } from '@/core/oauth';
 import type { DB } from '@/db/types';
 import { createTestDb, createTestUser } from '../helpers/db';
@@ -37,5 +37,14 @@ describe('authenticateBearer', () => {
     expect(await bearer('Bearer algo')).toBeNull();
     expect(await bearer('')).toBeNull();
     expect(await bearer(`ntk_${'a'.repeat(300)}`)).toBeNull();
+  });
+});
+
+describe('describeBearerClient', () => {
+  it('token personal → su nombre; OAuth → el client_name', async () => {
+    const { token } = await createApiToken(db, userId, 'Cursor');
+    expect(await describeBearerClient(db, (await bearer(token))!)).toBe('Cursor');
+    const { tokens } = await issueTestTokens(db, userId);
+    expect(await describeBearerClient(db, (await bearer(tokens.access_token))!)).toBe('Cliente de prueba');
   });
 });

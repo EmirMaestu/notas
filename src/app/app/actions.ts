@@ -9,7 +9,7 @@ import { addListMember, getListMembers, leaveList, removeListMember } from '@/co
 import { revokeOAuthConnection } from '@/core/oauth';
 import { parseQuickAdd } from '@/core/quick-add';
 import {
-  addSubtask, completeTask, createTask, deleteSubtask, deleteTask, moveTask, restoreTask, uncompleteTask,
+  addSubtask, completeTask, createTask, deleteSubtask, deleteTask, emptyTrash, moveTask, restoreTask, uncompleteTask,
   updateSubtask, updateTask, type TaskView, type UpdateTaskInput,
 } from '@/core/tasks';
 import { updateUserTimezone, type PublicUser } from '@/core/users';
@@ -48,6 +48,7 @@ export async function quickAddAction(text: string, context: QuickAddContext) {
       dueDate: parsed.dueDate ?? defaultDue,
       priority: parsed.priority,
       tags,
+      createdVia: 'web',
     });
     return { id: task.id };
   });
@@ -78,6 +79,11 @@ export async function deleteTaskAction(taskId: string) {
 
 export async function restoreTaskAction(taskId: string) {
   return act(async (db, user) => { await restoreTask(db, user.id, taskId); });
+}
+
+/** Vacía la papelera (solo tareas de listas propias). Devuelve cuántas se borraron. */
+export async function emptyTrashAction() {
+  return act(async (db, user) => emptyTrash(db, user.id));
 }
 
 export async function addSubtaskAction(taskId: string, title: string) {

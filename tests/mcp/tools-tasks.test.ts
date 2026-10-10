@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addDays, todayIn } from '@/core/dates';
+import { getTask } from '@/core/tasks';
 import { DEFAULT_TIMEZONE } from '@/core/users';
 import type { DB } from '@/db/types';
 import type { ToolContext } from '@/mcp/tools';
@@ -177,5 +178,18 @@ describe('asignación y aislamiento', () => {
     expect(await callError(other, 'complete_task', { task_id: task.id })).toBe('La tarea no existe; usá list_tasks o search_tasks para obtener ids válidos');
     expect(await callError(other, 'delete_task', { task_id: task.id })).toBe('La tarea no existe; usá list_tasks o search_tasks para obtener ids válidos');
     expect((await callOk(other, 'search_tasks', { query: 'Secreta' })).tasks).toEqual([]);
+  });
+});
+
+describe('origen de las tareas creadas por MCP', () => {
+  it('create_task guarda el cliente en created_via (sin exponerlo en la salida)', async () => {
+    const task = await callOk({ ...ctx, client: 'Claude' }, 'create_task', { title: 'Desde Claude' });
+    expect(Object.keys(task).sort()).toEqual(TASK_KEYS);
+    expect((await getTask(db, ctx.userId, task.id)).createdVia).toBe('mcp:Claude');
+  });
+
+  it('sin nombre de cliente queda como mcp:IA', async () => {
+    const task = await callOk(ctx, 'create_task', { title: 'Sin cliente' });
+    expect((await getTask(db, ctx.userId, task.id)).createdVia).toBe('mcp:IA');
   });
 });

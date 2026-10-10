@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseQuickAdd } from '@/core/quick-add';
+import { parseQuickAdd, quickAddHighlights } from '@/core/quick-add';
 
 const TODAY = '2026-10-08'; // jueves
 
@@ -70,5 +70,42 @@ describe('parseQuickAdd', () => {
 
   it('quita todos los tokens de prioridad; el primero manda', () => {
     expect(parseQuickAdd('Algo !alta !baja', TODAY)).toMatchObject({ title: 'Algo', priority: 5 });
+  });
+});
+
+describe('quickAddHighlights', () => {
+  const SAT = '2026-10-10';
+
+  it('marca fecha, prioridad y etiquetas sobre el texto original', () => {
+    expect(quickAddHighlights('Pagar luz mañana !alta #casa', SAT)).toEqual([
+      { start: 10, end: 16 }, { start: 17, end: 22 }, { start: 23, end: 28 },
+    ]);
+    expect(quickAddHighlights('Llamar al contador el lunes !media #llamadas', SAT)).toEqual([
+      { start: 19, end: 27 }, { start: 28, end: 34 }, { start: 35, end: 44 },
+    ]);
+  });
+
+  it('sin nada detectable (o con una fecha imposible) no marca nada', () => {
+    expect(quickAddHighlights('Comprar pan', SAT)).toEqual([]);
+    expect(quickAddHighlights('Turno 31/02', SAT)).toEqual([]);
+    expect(quickAddHighlights('', SAT)).toEqual([]);
+  });
+
+  it('sacar lo marcado deja exactamente el título que arma parseQuickAdd', () => {
+    const strip = (text: string) => {
+      let out = '';
+      let pos = 0;
+      for (const r of quickAddHighlights(text, SAT)) {
+        out += `${text.slice(pos, r.start)} `;
+        pos = r.end;
+      }
+      return `${out}${text.slice(pos)}`.replace(/\s+/g, ' ').replace(/\s+([,.;:!?)])/g, '$1').trim();
+    };
+    for (const text of [
+      'Pagar luz mañana !alta #casa', 'Comprar pan, #super. hoy', 'Reunión el lunes !media',
+      'Asado el sábado #finde !baja', 'Llamar pasado mañana', 'Turno 31/02',
+    ]) {
+      expect(strip(text)).toBe(parseQuickAdd(text, SAT).title);
+    }
   });
 });

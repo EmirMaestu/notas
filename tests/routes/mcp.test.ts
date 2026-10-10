@@ -73,6 +73,15 @@ describe('/mcp: autenticación', () => {
 });
 
 describe('/mcp: era 2025 (JSON-RPC a mano, como Claude o ChatGPT hoy)', () => {
+  it('las tareas creadas por MCP guardan el nombre del token o de la app', async () => {
+    const call = await readRpc(await POST(rpcRequest(token, 1, 'tools/call', {
+      name: 'create_task', arguments: { title: 'Con origen' },
+    })));
+    expect(call.result.isError).toBeFalsy();
+    const [task] = await listTasks(db, userId, { view: 'inbox' });
+    expect(task.createdVia).toBe('mcp:tests');
+  });
+
   it('initialize, tools/list y tools/call', async () => {
     const init = await readRpc(await POST(rpcRequest(token, 1, 'initialize', {
       protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '1.0.0' },

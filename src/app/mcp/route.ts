@@ -1,5 +1,5 @@
 import { createMcpHandler } from '@modelcontextprotocol/server';
-import { authenticateBearer } from '@/core/bearer';
+import { authenticateBearer, describeBearerClient } from '@/core/bearer';
 import { OAUTH_SCOPE } from '@/core/oauth';
 import { getDb } from '@/db';
 import { appUrl, mcpResourceUrl, protectedResourceMetadataUrl } from '@/lib/app-url';
@@ -16,7 +16,8 @@ export const dynamic = 'force-dynamic';
 const mcpHandler = createMcpHandler(async ({ authInfo }) => {
   const userId = authInfo?.extra?.userId;
   if (typeof userId !== 'string') throw new Error('Solicitud MCP sin usuario autenticado');
-  return createNotasMcpServer(await getDb(), userId);
+  const client = authInfo?.extra?.client;
+  return createNotasMcpServer(await getDb(), userId, typeof client === 'string' ? client : undefined);
 }, {
   onerror: (err) => console.error('[mcp]', err.message),
   // El servidor nunca emite list_changed: no hay nada que escuchar. 0 hace que el SDK rechace todo
@@ -63,7 +64,8 @@ async function handle(request: Request): Promise<Response> {
   }
   const token = bearerToken(request.headers.get('authorization'));
   if (!token) return unauthorized(request, false);
-  const auth = await authenticateBearer(await getDb(), token, { resource: mcpResourceUrl() });
+  const db = await getDb();
+  const auth = await authenticateBearer(db, token, { resource: mcpResourceUrl() });
   if (!auth) return unauthorized(request, true);
   if (!perUserLimiter.check(auth.userId)) {
     return Response.json(
@@ -77,7 +79,7 @@ async function handle(request: Request): Promise<Response> {
       token: 'redacted',
       clientId: auth.via === 'oauth' ? auth.clientId : 'personal',
       scopes: [OAUTH_SCOPE],
-      extra: { userId: auth.userId },
+      extra: { userId: auth.userId, client: await describeBearerClient(db, auth) },
     },
   });
 }

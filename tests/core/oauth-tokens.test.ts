@@ -156,12 +156,20 @@ describe('revocación y conexiones', () => {
     const { client } = await issueTestTokens(db, userId);
     await issueTestTokens(db, otherId);
     expect(await listOAuthConnections(db, userId)).toEqual([
-      { clientId: client.clientId, clientName: 'Cliente de prueba', lastUsedAt: null },
+      { clientId: client.clientId, clientName: 'Cliente de prueba', connectedAt: expect.any(Date), lastUsedAt: null },
     ]);
     await expect(revokeOAuthConnection(db, otherId, client.clientId)).rejects.toBeInstanceOf(NotFoundError);
     await revokeOAuthConnection(db, userId, client.clientId);
     expect(await listOAuthConnections(db, userId)).toEqual([]);
     await expect(revokeOAuthConnection(db, userId, client.clientId)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('connectedAt es cuándo se canjeó el código de la conexión vigente', async () => {
+    const t0 = new Date('2026-10-02T15:00:00Z');
+    const { client } = await issueTestTokens(db, userId, t0);
+    const [connection] = await listOAuthConnections(db, userId, t0);
+    expect(connection.clientId).toBe(client.clientId);
+    expect(connection.connectedAt?.toISOString()).toBe(t0.toISOString());
   });
 
   it('authenticateAccessToken actualiza last_used_at como mucho una vez por minuto', async () => {

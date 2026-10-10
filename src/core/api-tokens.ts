@@ -3,6 +3,7 @@ import { apiTokens } from '@/db/schema';
 import type { DB } from '@/db/types';
 import { NotFoundError, ValidationError, isUuid } from './errors';
 import { generateSecret, sha256Hex } from './secrets';
+import { stripHiddenChars } from './validation';
 
 export const PERSONAL_TOKEN_PREFIX = 'ntk_';
 const MAX_ACTIVE_TOKENS = 20;
@@ -30,7 +31,7 @@ const summaryColumns = {
 
 function cleanTokenName(name: unknown): string {
   if (typeof name !== 'string') throw new ValidationError('El nombre debe ser texto');
-  const clean = name.trim();
+  const clean = stripHiddenChars(name).trim();
   if (!clean) throw new ValidationError('Poné un nombre para reconocer el token (p. ej. "Cursor")');
   if (clean.length > 100) throw new ValidationError('El nombre no puede superar los 100 caracteres');
   return clean;
