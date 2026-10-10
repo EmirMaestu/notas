@@ -1,27 +1,46 @@
 'use client';
 
-import { ArrowLeft, RotateCcw, Trash2 } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { ArrowLeft, Calendar, Clock, Flag, List as ListIcon, RotateCcw, Trash2, User, X } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { isValidIsoDate, isValidTime } from '@/core/dates';
 import type { List } from '@/core/lists';
 import type { ListMember } from '@/core/members';
 import type { TaskWithDetails, UpdateTaskInput } from '@/core/tasks';
 import type { ActionResult } from '@/lib/action-result';
-import {
-  deleteTaskAction, moveTaskAction, restoreTaskAction, toggleTaskAction, updateTaskAction,
-} from '@/app/app/actions';
+import { formatAgo, formatDetailDate, trashNote } from '@/lib/format';
+import { moveTaskAction, restoreTaskAction, toggleTaskAction, updateTaskAction } from '@/app/app/actions';
+import { Avatar } from './avatar';
 import { PriorityCheckbox } from './priority-checkbox';
 import { PrioritySelect } from './priority-select';
+import { SelectPill } from './select-pill';
 import { SubtaskList } from './subtask-list';
 import { TagEditor } from './tag-editor';
+import { btn } from './ui';
+import { useWorkspace } from './workspace-context';
+
+const PILL = 'relative inline-flex h-[30px] items-center gap-[5px] rounded-pill border border-line px-2.5 text-[13.5px] font-semibold tabular-nums transition-[background-color,border-color,box-shadow] duration-120 hover:bg-hover has-[:focus-visible]:border-accent has-[:focus-visible]:shadow-[0_0_0_3px_var(--selected)]';
+/** Input nativo transparente encima de la píldora: conserva el selector del sistema y el teclado. */
+const OVERLAY = 'absolute inset-0 h-full w-full cursor-pointer opacity-0';
+const PROP_LABEL = 'flex h-9 items-center gap-2 text-muted';
+
+function openPicker(e: React.MouseEvent<HTMLInputElement>) {
+  try {
+    e.currentTarget.showPicker();
+  } catch {
+    // Ya abierto o navegador sin showPicker: queda el comportamiento nativo.
+  }
+}
 
 export function TaskDetail({
-  task, lists, members, currentUserId,
-}: { task: TaskWithDetails; lists: List[]; members: ListMember[]; currentUserId: string }) {
+  task, lists, members, currentUserId, today, now, timezone,
+}: {
+  task: TaskWithDetails; lists: List[]; members: ListMember[]; currentUserId: string;
+  today: string; now: string; timezone: string;
+}) {
   const inTrash = task.deletedAt !== null;
-  const router = useRouter();
   const pathname = usePathname();
+  const { closeDetail, trash, hide, consumeEditTitle } = useWorkspace();
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
   const [date, setDate] = useState(task.dueDate ?? '');
@@ -30,7 +49,9 @@ export function TaskDetail({
   const [listId, setListId] = useState(task.listId);
   const [assigneeId, setAssigneeId] = useState(task.assigneeId ?? '');
   const [error, setError] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
+  const [saving, startTransition] = useTransition();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => setDate(task.dueDate ?? ''), [task.dueDate]);
   useEffect(() => setTime(task.dueTime ?? ''), [task.dueTime]);
@@ -38,7 +59,28 @@ export function TaskDetail({
   useEffect(() => setListId(task.listId), [task.listId]);
   useEffect(() => setAssigneeId(task.assigneeId ?? ''), [task.assigneeId]);
 
-  const close = () => router.push(pathname, { scroll: false });
+  // Atajo E desde la fila: el detalle abre con el título listo para editar.
+  useEffect(() => {
+    if (!consumeEditTitle()) return;
+    const el = titleRef.current;
+    el?.focus();
+    el?.setSelectionRange(el.value.length, el.value.length);
+  }, [consumeEditTitle]);
+
+  // Esc cierra el detalle (guardando antes el campo que se estaba editando) y devuelve el foco a la fila.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('[aria-modal="true"]')) return;
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && rootRef.current?.contains(active) && active.matches('input, textarea, select')) {
+        active.blur();
+      }
+      closeDetail();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [closeDetail]);
+
   const run = (fn: () => Promise<ActionResult<unknown>>, after?: () => void, onFail?: () => void) =>
     startTransition(async () => {
       const result = await fn();
@@ -74,7 +116,8 @@ export function TaskDetail({
     }
   }
   function saveTitle() {
-    const clean = title.trim();
+    // El título se edita en un textarea (para que pueda ocupar varias líneas), pero no lleva saltos de línea.
+    const clean = title.replace(/\s*\n\s*/g, ' ').trim();
     if (!clean) { setTitle(task.title); return; }
     setTitle(clean);
     if (clean !== task.title) save({ title: clean });
@@ -84,7 +127,7 @@ export function TaskDetail({
     run(
       () => moveTaskAction(task.id, newListId),
       // Si la vista actual es una lista y la tarea se fue a otra, el detalle ya no corresponde.
-      () => { if (pathname.startsWith('/app/list/') && !pathname.includes(newListId)) close(); },
+      () => { if (pathname.startsWith('/app/list/') && !pathname.includes(newListId)) closeDetail(); },
       () => setListId(task.listId),
     );
   }
@@ -94,114 +137,161 @@ export function TaskDetail({
     run(
       () => updateTaskAction(task.id, { assigneeId: next || null }),
       // En "Asignadas a mí", una tarea reasignada a otra persona (o sin asignar) deja de pertenecer a la vista.
-      () => { if (pathname.startsWith('/app/assigned') && next !== currentUserId) close(); },
+      () => { if (pathname.startsWith('/app/assigned') && next !== currentUserId) closeDetail(); },
       () => setAssigneeId(task.assigneeId ?? ''),
     );
   }
 
+  const currentList = lists.find((l) => l.id === listId);
   const header = (
-    <button onClick={close} aria-label="Cerrar detalle" className="rounded p-1.5 hover:bg-hover"><ArrowLeft size={18} /></button>
+    <div className="flex h-14 shrink-0 items-center gap-2 border-b border-line pl-2.5 pr-3">
+      <button type="button" onClick={closeDetail} aria-label="Cerrar detalle" className={`${btn.icon} h-9 w-9`}>
+        <ArrowLeft size={20} aria-hidden="true" className="text-fg lg:hidden" />
+        <X size={18} aria-hidden="true" className="hidden lg:block" />
+      </button>
+      {currentList && (
+        <span className="inline-flex min-w-0 items-center gap-[5px] text-meta text-muted">
+          <span aria-hidden="true" className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ backgroundColor: currentList.color ?? 'var(--muted)' }} />
+          <span className="truncate">{currentList.name}</span>
+        </span>
+      )}
+      <span className="flex-1" />
+    </div>
+  );
+  const errorBox = error && (
+    <p role="alert" className="rounded-input bg-danger-bg px-3 py-2.5 text-[13px] font-semibold text-danger">{error}</p>
   );
 
   if (inTrash) {
     return (
-      <div className="flex h-full flex-col">
-        <div className="flex items-center gap-2 border-b border-line px-3 py-2">{header}</div>
-        <div className="space-y-4 p-4">
-          <h2 className="text-lg font-semibold">{task.title}</h2>
-          <p className="text-sm text-muted">Esta tarea está en la papelera. Se borra definitivamente a los 30 días.</p>
+      <div ref={rootRef} className="flex h-full flex-col">
+        {header}
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-[22px]">
+          <h2 className="text-title text-muted">{task.title}</h2>
+          <p className="text-body-sm text-muted">
+            Esta tarea está en la papelera. {trashNote(task.deletedAt!, new Date(now))}.
+          </p>
           <button
-            onClick={() => run(() => restoreTaskAction(task.id), close)}
-            className="flex items-center gap-2 rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-fg"
+            type="button" onClick={() => run(() => restoreTaskAction(task.id), () => { hide(task.id); closeDetail(); })}
+            className={`${btn.primary} h-10 self-start px-4 text-[13.5px]`}
           >
-            <RotateCcw size={15} /> Restaurar
+            <RotateCcw size={15} aria-hidden="true" />
+            Restaurar
           </button>
-          {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+          {errorBox}
         </div>
       </div>
     );
   }
 
   const done = task.status === 'completed';
-  const control = 'rounded border border-line bg-transparent px-2 py-1 text-sm';
-  return (
-    <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2">
-        {header}
-        <PriorityCheckbox
-          checked={done} priority={priority} onChange={() => run(() => toggleTaskAction(task.id, !done))}
-          label={done ? 'Marcar esta tarea como pendiente' : 'Completar esta tarea'}
-        />
-        <input
-          type="date" value={date} aria-label="Fecha" className={control}
-          onChange={(e) => { setDate(e.target.value); commitDate(e.target, false); }}
-          onBlur={(e) => commitDate(e.target, true)}
-        />
-        {task.dueDate && (
-          <input
-            type="time" value={time} aria-label="Hora" className={control}
-            onChange={(e) => { setTime(e.target.value); commitTime(e.target, false); }}
-            onBlur={(e) => commitTime(e.target, true)}
-          />
-        )}
-        <PrioritySelect
-          value={priority}
-          onChange={(p) => { setPriority(p); save({ priority: p }, () => setPriority(task.priority)); }}
-        />
-        <button
-          aria-label="Mandar a la papelera" className="ml-auto rounded p-1.5 text-muted hover:bg-hover hover:text-danger"
-          onClick={() => confirm('¿Mandar la tarea a la papelera?') && run(() => deleteTaskAction(task.id), close)}
-        >
-          <Trash2 size={17} />
-        </button>
-      </div>
+  const shownDate = isValidIsoDate(date) ? date : task.dueDate;
+  const dateTone = !shownDate ? 'font-medium text-muted'
+    : shownDate < today && !done ? 'text-danger'
+    : shownDate === today ? 'text-accent'
+    : 'text-fg';
+  const shownTime = isValidTime(time) ? time : task.dueTime;
+  const assignee = members.find((m) => m.id === assigneeId) ?? (task.assignee?.id === assigneeId ? task.assignee : null);
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4">
-        <input
-          value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Título"
-          onBlur={saveTitle}
-          onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-          className={`w-full bg-transparent text-lg font-semibold outline-none ${done ? 'text-muted line-through' : ''}`}
-        />
+  return (
+    <div ref={rootRef} className="flex h-full flex-col">
+      {header}
+
+      <div className="flex min-h-0 flex-1 flex-col gap-[22px] overflow-y-auto px-[22px] pb-6 pt-[22px]">
+        <div className="flex items-start gap-3.5">
+          <PriorityCheckbox
+            size="lg" checked={done} priority={priority} onChange={() => run(() => toggleTaskAction(task.id, !done))}
+            label={done ? 'Marcar esta tarea como pendiente' : 'Completar esta tarea'}
+          />
+          <textarea
+            ref={titleRef} rows={1} value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Título"
+            onBlur={saveTitle}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+            className={`min-w-0 flex-1 resize-none bg-transparent text-title outline-none [field-sizing:content] focus-visible:outline-none ${done ? 'text-muted line-through' : ''}`}
+          />
+        </div>
+
+        <dl className="grid grid-cols-[110px_minmax(0,1fr)] items-center gap-y-1 text-body-sm">
+          <dt className={PROP_LABEL}><Calendar size={15} aria-hidden="true" />Fecha</dt>
+          <dd className="flex min-h-9 flex-wrap items-center gap-1.5">
+            <label className={`${PILL} ${dateTone}`}>
+              <span aria-hidden="true">{shownDate ? formatDetailDate(shownDate, today) : 'Sin fecha'}</span>
+              <input
+                type="date" value={date} aria-label="Fecha" className={OVERLAY} onClick={openPicker}
+                onChange={(e) => { setDate(e.target.value); commitDate(e.target, false); }}
+                onBlur={(e) => commitDate(e.target, true)}
+              />
+            </label>
+            {task.dueDate && (
+              <label className={`${PILL} text-fg`}>
+                <Clock size={13} strokeWidth={2.2} aria-hidden="true" className="text-muted" />
+                <span aria-hidden="true" className={shownTime ? '' : 'font-medium text-muted'}>{shownTime ?? 'Agregar hora'}</span>
+                <input
+                  type="time" value={time} aria-label="Hora" className={OVERLAY} onClick={openPicker}
+                  onChange={(e) => { setTime(e.target.value); commitTime(e.target, false); }}
+                  onBlur={(e) => commitTime(e.target, true)}
+                />
+              </label>
+            )}
+          </dd>
+
+          <dt className={PROP_LABEL}><Flag size={15} aria-hidden="true" />Prioridad</dt>
+          <dd className="flex min-h-9 items-center">
+            <PrioritySelect
+              value={priority}
+              onChange={(p) => { setPriority(p); save({ priority: p }, () => setPriority(task.priority)); }}
+            />
+          </dd>
+
+          <dt className={PROP_LABEL}><ListIcon size={15} aria-hidden="true" />Lista</dt>
+          <dd className="flex min-h-9 min-w-0 items-center">
+            <SelectPill
+              label="Lista" value={listId} onChange={move} leadingInset="dot"
+              leading={<span className="h-2 w-2 rounded-full" style={{ backgroundColor: currentList?.color ?? 'var(--muted)' }} />}
+            >
+              {lists.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+            </SelectPill>
+          </dd>
+
+          {members.length > 0 && (
+            <>
+              <dt className={PROP_LABEL}><User size={15} aria-hidden="true" />Asignada a</dt>
+              <dd className="flex min-h-9 min-w-0 items-center">
+                <SelectPill
+                  label="Asignada a" value={assigneeId} onChange={assign}
+                  leadingInset={assignee ? 'avatar' : 'flag'}
+                  leading={assignee ? <Avatar person={assignee} size={20} /> : <User size={13} className="text-muted" />}
+                >
+                  <option value="">Sin asignar</option>
+                  {members.map((m) => <option key={m.id} value={m.id}>{m.name || m.email}</option>)}
+                </SelectPill>
+              </dd>
+            </>
+          )}
+        </dl>
+
         <textarea
           value={description} onChange={(e) => setDescription(e.target.value)} aria-label="Descripción"
           onBlur={() => description !== task.description && save({ description })}
-          placeholder="Descripción" rows={4}
-          className="w-full resize-y bg-transparent text-sm outline-none placeholder:text-muted"
+          placeholder="Agregar una descripción…" rows={2}
+          className="min-h-[3.2em] w-full shrink-0 resize-none bg-transparent text-body leading-[1.6] text-fg outline-none [field-sizing:content] placeholder:text-muted focus-visible:outline-none"
         />
+
         <SubtaskList task={task} onError={setError} />
-        <div className="space-y-1">
-          <TagEditor tags={task.tags} onChange={(tags, onFail) => save({ tags }, onFail)} />
-          {task.otherTags.length > 0 && (
-            <p className="text-xs text-muted">
-              De otros miembros: {task.otherTags.map((t) => `#${t}`).join(' ')}
-            </p>
-          )}
-        </div>
-        <label className="flex items-center gap-2 text-sm text-muted">
-          Lista
-          <select
-            value={listId} onChange={(e) => move(e.target.value)}
-            className={`${control} text-fg`} aria-label="Lista"
-          >
-            {lists.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-          </select>
-        </label>
-        {members.length > 0 && (
-          <label className="flex items-center gap-2 text-sm text-muted">
-            Asignada a
-            <select
-              value={assigneeId} onChange={(e) => assign(e.target.value)}
-              className={`${control} text-fg`} aria-label="Asignada a"
-            >
-              <option value="">Sin asignar</option>
-              {members.map((m) => (
-                <option key={m.id} value={m.id}>{m.name ? `${m.name} (${m.email})` : m.email}</option>
-              ))}
-            </select>
-          </label>
-        )}
-        {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+
+        <TagEditor tags={task.tags} otherTags={task.otherTags} onChange={(tags, onFail) => save({ tags }, onFail)} />
+
+        {errorBox}
+      </div>
+
+      <div className="flex shrink-0 items-center justify-between gap-3 border-t border-line px-4 py-3">
+        <span className="text-meta text-muted" aria-live="polite">
+          {saving ? 'Guardando…' : `Modificada ${formatAgo(task.updatedAt, new Date(now), timezone)}`}
+        </span>
+        <button type="button" onClick={() => trash(task)} className={`${btn.ghostDanger} h-[34px] px-3 text-[13px]`}>
+          <Trash2 size={14} aria-hidden="true" />
+          Mandar a la papelera
+        </button>
       </div>
     </div>
   );

@@ -131,7 +131,10 @@ export function TaskWorkspace({
         </section>
         {selected && (
           <aside className="flex w-full animate-screen-in flex-col bg-surface lg:w-[400px] lg:shrink-0 lg:animate-panel-in lg:border-l lg:border-line">
-            <TaskDetail key={selected.id} task={selected} lists={lists} members={members} currentUserId={currentUserId} />
+            <TaskDetail
+              key={selected.id} task={selected} lists={lists} members={members} currentUserId={currentUserId}
+              today={today} now={now} timezone={timezone}
+            />
           </aside>
         )}
       </div>

@@ -3,13 +3,16 @@
 import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { normalizeTagName } from '@/core/tag-name';
+import { sectionLabel } from './ui';
 
 /**
  * Lista optimista: los cambios se arman siempre sobre la lista local (no sobre la prop),
  * así que agregar o quitar varias etiquetas seguidas no pisa los cambios anteriores.
  * `onFail` revierte la lista local al valor del servidor si el guardado falla.
  */
-export function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags: string[], onFail: () => void) => void }) {
+export function TagEditor({
+  tags, otherTags, onChange,
+}: { tags: string[]; otherTags: string[]; onChange: (tags: string[], onFail: () => void) => void }) {
   const [local, setLocal] = useState(tags);
   const current = useRef(tags);
   const serverTags = useRef(tags);
@@ -47,23 +50,34 @@ export function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags:
   }
 
   return (
-    <div>
-      <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Etiquetas</h3>
+    <div className="flex flex-col gap-2">
+      <h3 className={sectionLabel}>Etiquetas</h3>
       <div className="flex flex-wrap items-center gap-1.5">
         {local.map((t) => (
-          <span key={t} className="flex items-center gap-1 rounded bg-hover px-2 py-0.5 text-xs">
+          <span key={t} className="inline-flex h-[26px] items-center gap-1 rounded-tag bg-hover pl-[9px] pr-1.5 text-caption font-semibold">
             #{t}
-            <button onClick={() => commit(current.current.filter((x) => x !== t))} aria-label={`Quitar etiqueta ${t}`}><X size={12} /></button>
+            <button
+              type="button" onClick={() => commit(current.current.filter((x) => x !== t))} aria-label={`Quitar etiqueta ${t}`}
+              className="flex h-4 w-4 items-center justify-center rounded-sm text-muted hover:text-fg"
+            >
+              <X size={11} strokeWidth={2.4} aria-hidden="true" />
+            </button>
           </span>
         ))}
         <input
           value={draft} onChange={(e) => { setDraft(e.target.value); setError(null); }}
-          placeholder="+ etiqueta" aria-label="Agregar etiqueta" aria-invalid={error !== null}
+          placeholder="+ Etiqueta" aria-label="Agregar etiqueta" aria-invalid={error !== null}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} onBlur={add}
-          className="w-28 bg-transparent text-xs outline-none placeholder:text-muted"
+          className="h-[26px] w-[104px] rounded-tag border border-dashed border-line bg-transparent px-[9px] text-caption text-fg outline-none transition-[border-color,width] duration-120 placeholder:text-muted focus:w-40 focus:border-solid focus:border-accent focus-visible:outline-none aria-[invalid=true]:border-danger"
         />
       </div>
-      {error && <p role="alert" className="mt-1 text-xs text-danger">{error}</p>}
+      {otherTags.length > 0 && (
+        <p className="flex flex-wrap items-center gap-1.5 text-meta text-muted">
+          De otros miembros:
+          {otherTags.map((t) => <span key={t} className="rounded-chip border border-line px-[7px] py-px">#{t}</span>)}
+        </p>
+      )}
+      {error && <p role="alert" className="text-meta font-medium text-danger">{error}</p>}
     </div>
   );
 }
