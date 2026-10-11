@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Ícono de Notas: check (tareas) + chispa (IA), sobre el acento petróleo del rediseño. -->
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B8196"/>
+      <stop offset="1" stop-color="#0E505E"/>
+    </linearGradient>
+    <linearGradient id="brillo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".16"/>
+      <stop offset=".55" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="114" fill="url(#fondo)"/>
+  <rect width="512" height="512" rx="114" fill="url(#brillo)"/>
+  <path d="M128 284 L210 366 L358 216" fill="none" stroke="#FFFFFF" stroke-width="60" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M406 66 Q412 106 452 112 Q412 118 406 158 Q400 118 360 112 Q400 106 406 66 Z" fill="#8FD3E1"/>
+</svg>

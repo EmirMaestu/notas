@@ -9,7 +9,13 @@ const manrope = Manrope({
 });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'], weight: ['400', '500'], display: 'swap' });
 
-export const metadata: Metadata = { title: 'Notas', description: 'Tus tareas, tuyas y de la IA' };
+// Los íconos (favicon.ico, icon.svg, apple-icon.png) y el manifest salen de los archivos de src/app.
+export const metadata: Metadata = {
+  title: 'Notas',
+  description: 'Tus tareas, tuyas y de la IA',
+  applicationName: 'Notas',
+  appleWebApp: { capable: true, title: 'Notas', statusBarStyle: 'default' },
+};
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
