@@ -12,7 +12,7 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
-# Destino: NOTAS_DEPLOY_HOST del entorno o, si no est·, de deploy/.deploy.env (archivo local, ignorado por git).
+# Destino: NOTAS_DEPLOY_HOST del entorno o, si no est√°, de deploy/.deploy.env (archivo local, ignorado por git).
 if [ -z "${NOTAS_DEPLOY_HOST:-}" ] && [ -f deploy/.deploy.env ]; then
   set -a
   # shellcheck disable=SC1091
