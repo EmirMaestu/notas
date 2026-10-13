@@ -193,7 +193,7 @@ export function TaskWorkspace({
               {trashAction && <div className="flex justify-end px-2 pb-1 md:hidden">{trashAction}</div>}
               <TaskList
                 tasks={tasks} selectedId={selected?.id} grouping={grouping} today={today} now={now} timezone={timezone}
-                lists={lists} showListName={!context.listId && context.view !== 'inbox'} variant={variant} empty={empty}
+                lists={lists} folders={folders} showListName={!context.listId && context.view !== 'inbox'} variant={variant} empty={empty}
               />
             </div>
           </div>
@@ -201,7 +201,7 @@ export function TaskWorkspace({
         {selected && (
           <aside className="flex w-full animate-screen-in flex-col bg-surface lg:w-[400px] lg:shrink-0 lg:animate-panel-in lg:border-l lg:border-line">
             <TaskDetail
-              key={selected.id} task={selected} lists={lists} members={members} currentUserId={currentUserId}
+              key={selected.id} task={selected} lists={lists} folders={folders} members={members} currentUserId={currentUserId}
               today={today} now={now} timezone={timezone}
             />
           </aside>

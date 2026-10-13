@@ -197,9 +197,9 @@ export function TaskItem({
               {hasMeta && (
                 <span className="flex min-w-0 items-center gap-1.5 text-meta text-muted">
                   {list && (
-                    <span className="inline-flex shrink-0 items-center gap-[5px]">
-                      <span className="h-[7px] w-[7px] rounded-full" style={{ backgroundColor: list.color ?? 'var(--muted)' }} />
-                      {list.name}
+                    <span className="inline-flex min-w-0 max-w-[65%] items-center gap-[5px]">
+                      <span className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ backgroundColor: list.color ?? 'var(--muted)' }} />
+                      <span className="truncate">{list.name}</span>
                     </span>
                   )}
                   {allTags.map((t) => (

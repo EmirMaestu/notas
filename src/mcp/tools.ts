@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { todayIn } from '@/core/dates';
 import { NotFoundError, ValidationError } from '@/core/errors';
-import { createList, deleteList, getInbox, getList, listLists, updateList } from '@/core/lists';
+import { createList, deleteList, getInbox, getList, listFolders, listLists, updateList } from '@/core/lists';
 import { addListMember, getListMembers, leaveList, removeListMember } from '@/core/members';
 import { createTag, listTags } from '@/core/tags';
 import {
@@ -11,7 +11,7 @@ import {
 import { getUser } from '@/core/users';
 import type { DB } from '@/db/types';
 import { shareLimiter } from '@/lib/limits';
-import { formatList, formatMember, formatTag, formatTask, weekdayName } from './format';
+import { formatList, formatMember, formatTag, formatTask, weekdayName, type ListLabel } from './format';
 
 /** Con qué base y en nombre de qué usuario corre una herramienta. */
 export interface ToolContext {
@@ -92,25 +92,35 @@ const contextTools = [
   }),
 ];
 
+/** id → nombre de las carpetas del usuario. */
+async function folderNames(ctx: Pick<ToolContext, 'db' | 'userId'>): Promise<Map<string, string>> {
+  return new Map((await listFolders(ctx.db, ctx.userId)).map((f) => [f.id, f.name]));
+}
+
 const listTools = [
   defineTool({
     name: 'list_lists',
     title: 'Ver listas',
     description:
       'Lista las listas del usuario: las propias (la Bandeja primero) y las compartidas con él. '
-      + 'role = owner (dueño) o member (miembro); shared = tiene miembros.',
+      + 'role = owner (dueño) o member (miembro); shared = tiene miembros; folder = nombre de la carpeta donde está la lista '
+      + '(null si no está en una carpeta, y siempre null en las compartidas con él). Los nombres de lista pueden repetirse '
+      + 'en carpetas distintas (por ejemplo "Tareas" en "Rider G" y en "Sitrack"): identificá la lista por su id, no por el nombre.',
     input: z.object({}).strict(),
     readOnly: true,
-    run: async ({ db, userId }) => ({ lists: (await listLists(db, userId)).map(formatList) }),
+    run: async ({ db, userId }) => {
+      const names = await folderNames({ db, userId });
+      return { lists: (await listLists(db, userId)).map((l) => formatList(l, names)) };
+    },
   }),
   defineTool({
     name: 'create_list',
     title: 'Crear lista',
-    description: 'Crea una lista propia.',
+    description: 'Crea una lista propia (sin carpeta). Los nombres de lista pueden repetirse: usá siempre el id que devuelve.',
     input: z.object({ name: z.string().describe('Nombre (máx. 100 caracteres)'), color: color.optional() }).strict(),
     run: async ({ db, userId }, args) => {
       const list = await createList(db, userId, { name: args.name, color: args.color });
-      return formatList(await getList(db, userId, list.id));
+      return formatList(await getList(db, userId, list.id), await folderNames({ db, userId }));
     },
   }),
   defineTool({
@@ -125,7 +135,7 @@ const listTools = [
     idempotent: true,
     run: async ({ db, userId }, args) => {
       await updateList(db, userId, args.list_id, { name: args.name, color: args.color });
-      return formatList(await getList(db, userId, args.list_id));
+      return formatList(await getList(db, userId, args.list_id), await folderNames({ db, userId }));
     },
   }),
   defineTool({
@@ -175,18 +185,19 @@ const tagNames = z.array(z.string()).max(30)
 const SEARCH_CAP = 50;
 const VIEWS = ['inbox', 'today', 'next7', 'assigned', 'completed', 'trash'] as const;
 
-async function listNames(ctx: ToolContext): Promise<Map<string, string>> {
-  return new Map((await listLists(ctx.db, ctx.userId)).map((l) => [l.id, l.name]));
+async function listLabels(ctx: ToolContext): Promise<Map<string, ListLabel>> {
+  const [lists, folders] = await Promise.all([listLists(ctx.db, ctx.userId), folderNames(ctx)]);
+  return new Map(lists.map((l) => [l.id, { name: l.name, folder: l.folderId ? folders.get(l.folderId) ?? null : null }]));
 }
 
 async function taskOut(ctx: ToolContext, task: TaskWithDetails) {
   const { timezone } = await getUser(ctx.db, ctx.userId);
-  return formatTask(task, await listNames(ctx), { timezone });
+  return formatTask(task, await listLabels(ctx), { timezone });
 }
 
 /** Para listados: las descripciones largas se recortan (el detalle completo está en get_task). */
 async function tasksOut(ctx: ToolContext, tasks: TaskWithDetails[]) {
-  const [names, { timezone }] = await Promise.all([listNames(ctx), getUser(ctx.db, ctx.userId)]);
+  const [names, { timezone }] = await Promise.all([listLabels(ctx), getUser(ctx.db, ctx.userId)]);
   return tasks.map((t) => formatTask(t, names, { timezone, truncateDescription: true }));
 }
 
@@ -212,7 +223,8 @@ const taskTools = [
       + 'listas. Se puede filtrar por list_id y por tag. today y next7 incluyen tareas de listas compartidas solo si están asignadas a mí. '
       + 'Las descripciones de más de 200 caracteres vienen recortadas con "…" y description_truncated: true; usá get_task '
       + 'para ver la completa. Fechas YYYY-MM-DD y horas HH:mm en la zona horaria del usuario; completed_at y deleted_at '
-      + 'vienen como YYYY-MM-DD HH:mm en esa misma zona.',
+      + 'vienen como YYYY-MM-DD HH:mm en esa misma zona. Cada tarea trae list_id, list_name y list_folder (carpeta de su '
+      + 'lista, o null): los nombres de lista pueden repetirse en carpetas distintas, así que filtrá y distinguí por list_id.',
     input: z.object({
       view: z.enum(VIEWS).optional().describe('Vista inteligente'),
       list_id: idOf('la lista').optional(),
@@ -345,7 +357,7 @@ const taskTools = [
   defineTool({
     name: 'move_task',
     title: 'Mover tarea',
-    description: 'Mueve la tarea a otra lista. Si la persona asignada no tiene acceso a la lista nueva, se quita la asignación.',
+    description: 'Mueve la tarea a otra lista (indicala por id: los nombres de lista pueden repetirse en carpetas distintas). Si la persona asignada no tiene acceso a la lista nueva, se quita la asignación.',
     input: z.object({ task_id: idOf('la tarea'), list_id: idOf('la lista destino') }).strict(),
     idempotent: true,
     run: async (ctx, args) => taskOut(ctx, await moveTask(ctx.db, ctx.userId, args.task_id, args.list_id)),
