@@ -1,0 +1,63 @@
+# Deploy automático: cuando el CI termina en verde sobre master (o sea, después de mergear un PR),
+# despliega ese commit en la VPS con deploy/deploy.sh: backup previo, build, health check y vuelta atrás automática.
+# También se puede lanzar a mano desde Actions → Deploy → Run workflow (solo desde master).
+# Secretos del entorno "production": DEPLOY_SSH_KEY (clave exclusiva de Actions), DEPLOY_KNOWN_HOSTS (huellas
+# fijadas de la VPS) y NOTAS_DEPLOY_HOST; variable NOTAS_URL.
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+# Un despliegue a la vez; uno nuevo espera a que termine el anterior (no lo cancela).
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Desplegar en producción
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: ${{ vars.NOTAS_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # El commit exacto que pasó el CI (no el último de master, que podría ser otro).
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Configurar SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Backup de la base
+        env:
+          NOTAS_DEPLOY_HOST: ${{ secrets.NOTAS_DEPLOY_HOST }}
+        run: ssh -o BatchMode=yes "$NOTAS_DEPLOY_HOST" 'bash ~/notas/current/deploy/backup.sh'
+
+      - name: Desplegar
+        env:
+          NOTAS_DEPLOY_HOST: ${{ secrets.NOTAS_DEPLOY_HOST }}
+          # El checkout queda en el commit (HEAD separado), no en la rama: deploy.sh lo permite con esto.
+          NOTAS_ALLOW_BRANCH: '1'
+        run: bash deploy/deploy.sh
+
+      - name: Verificar en producción
+        env:
+          NOTAS_URL: ${{ vars.NOTAS_URL }}
+        run: curl -fsS --retry 5 --retry-delay 5 "$NOTAS_URL/api/health"

@@ -49,4 +49,12 @@ Logs: `docker logs --tail 100 notas-app-1`.
 2. Commits, tests verdes (`npx vitest run`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, `npm run e2e`).
 3. `git push -u origin <rama>` y `gh pr create --fill` (o con título y cuerpo).
 4. Revisar el PR y mergearlo: `gh pr merge --merge --delete-branch`.
-5. Volver a `master` actualizada (`git checkout master && git pull`) y recién ahí desplegar: `bash deploy/deploy.sh` (exige `master` limpia).
+5. **El deploy es automático:** al mergear, el CI corre sobre `master` y, si pasa, el workflow **Deploy**
+   (`.github/workflows/deploy.yml`) hace un backup de la base y corre `deploy/deploy.sh` contra la VPS con una clave
+   SSH exclusiva de Actions (entorno `production`, solo desde `master`). Se sigue en GitHub → Actions → Deploy.
+6. Para desplegar a mano (p. ej. si Actions no está disponible): `git checkout master && git pull` y
+   `bash deploy/deploy.sh` desde Git Bash. También se puede relanzar desde Actions → Deploy → Run workflow.
+
+Los checks obligatorios para mergear a `master` son **Verificación** (tipos, lint, tests, build) y **E2E (Playwright)**
+(`.github/workflows/ci.yml`). Los archivos de `.github/workflows/` solo se pueden subir con un token que tenga el
+permiso `workflow` (o editándolos desde la web de GitHub).
