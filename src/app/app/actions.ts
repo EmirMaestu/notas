@@ -1,15 +1,19 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { after } from 'next/server';
 import { createApiToken, revokeApiToken } from '@/core/api-tokens';
 import { todayIn } from '@/core/dates';
 import { ValidationError } from '@/core/errors';
 import { createFolder, createList, deleteFolder, deleteList, renameFolder, updateList, type UpdateListInput } from '@/core/lists';
 import { addListMember, getListMembers, leaveList, removeListMember } from '@/core/members';
+import { updateNotificationPrefs, type NotificationPrefs } from '@/core/notification-prefs';
+import { sendTestNotification } from '@/core/notifications';
 import { revokeOAuthConnection } from '@/core/oauth';
+import { countPushSubscriptions, deletePushSubscription, savePushSubscription } from '@/core/push-subscriptions';
 import { parseQuickAdd } from '@/core/quick-add';
 import {
-  addSubtask, completeTask, createTask, deleteSubtask, deleteTask, emptyTrash, moveTask, restoreTask, uncompleteTask,
+  addSubtask, completeTask, createTask, deleteSubtask, deleteTask, emptyTrash, getTask, moveTask, restoreTask, uncompleteTask,
   updateSubtask, updateTask, type TaskView, type UpdateTaskInput,
 } from '@/core/tasks';
 import { updateUserTimezone, type PublicUser } from '@/core/users';
@@ -18,6 +22,8 @@ import type { DB } from '@/db/types';
 import { runAction, type ActionResult } from '@/lib/action-result';
 import { requireUser } from '@/lib/auth';
 import { shareLimiter } from '@/lib/limits';
+import { assignmentChanged, notifyAssignmentSafely } from '@/lib/notify';
+import { getPushSender } from '@/lib/push';
 import { createRateLimiter } from '@/lib/rate-limit';
 
 async function act<T>(fn: (db: DB, user: PublicUser) => Promise<T>): Promise<ActionResult<T>> {
@@ -57,8 +63,15 @@ export async function quickAddAction(text: string, context: QuickAddContext) {
 export async function updateTaskAction(taskId: string, input: UpdateTaskInput) {
   // Solo los campos editables: el resto (listId, status, externalId...) no se acepta del cliente.
   return act(async (db, user) => {
-    const { title, description, dueDate, dueTime, priority, tags, subtasks, assigneeId } = input;
-    await updateTask(db, user.id, taskId, { title, description, dueDate, dueTime, priority, tags, subtasks, assigneeId });
+    const { title, description, dueDate, dueTime, priority, tags, subtasks, assigneeId, reminder } = input;
+    const before = assigneeId !== undefined ? (await getTask(db, user.id, taskId)).assigneeId : null;
+    const task = await updateTask(db, user.id, taskId, {
+      title, description, dueDate, dueTime, priority, tags, subtasks, assigneeId, reminder,
+    });
+    if (assigneeId !== undefined && assignmentChanged(before, task.assigneeId, user.id)) {
+      // Después de responder: el push no demora la interfaz.
+      after(() => notifyAssignmentSafely(db, user.id, task.id));
+    }
   });
 }
 
@@ -180,4 +193,51 @@ export async function revokeApiTokenAction(tokenId: string) {
 
 export async function revokeOAuthConnectionAction(clientId: string) {
   return act((db, user) => revokeOAuthConnection(db, user.id, String(clientId)));
+}
+
+// ---------- Notificaciones ----------
+
+const PUSH_OFF = 'Las notificaciones no están configuradas en este servidor (faltan las claves VAPID).';
+const subscribeLimiter = createRateLimiter({ max: 20, windowMs: 60 * 60 * 1000 });
+const testPushLimiter = createRateLimiter({ max: 5, windowMs: 60 * 1000 });
+
+/** Datos de `PushSubscription.toJSON()` más el user agent. Se validan en el núcleo. */
+export interface PushSubscriptionPayload {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  userAgent?: string;
+}
+
+/** Guarda la suscripción de este dispositivo. Devuelve en cuántos dispositivos quedan activadas. */
+export async function savePushSubscriptionAction(input: PushSubscriptionPayload) {
+  return act(async (db, user) => {
+    if (!getPushSender()) throw new ValidationError(PUSH_OFF);
+    if (!subscribeLimiter.check(user.id)) throw new ValidationError('Demasiados intentos seguidos. Probá más tarde.');
+    await savePushSubscription(db, user.id, input);
+    return { devices: await countPushSubscriptions(db, user.id) };
+  });
+}
+
+export async function deletePushSubscriptionAction(endpoint: string) {
+  return act(async (db, user) => {
+    await deletePushSubscription(db, user.id, endpoint);
+    return { devices: await countPushSubscriptions(db, user.id) };
+  });
+}
+
+export async function sendTestNotificationAction() {
+  return act(async (db, user) => {
+    const send = getPushSender();
+    if (!send) throw new ValidationError(PUSH_OFF);
+    if (!testPushLimiter.check(user.id)) throw new ValidationError('Esperá un momento antes de mandar otra prueba.');
+    const report = await sendTestNotification(db, user.id, send, new Date());
+    if (report.sent === 0) {
+      throw new ValidationError('No llegó a ningún dispositivo. Desactivá y volvé a activar las notificaciones en este dispositivo.');
+    }
+    return { sent: report.sent };
+  });
+}
+
+export async function updateNotificationPrefsAction(input: Partial<NotificationPrefs>) {
+  return act((db, user) => updateNotificationPrefs(db, user.id, input));
 }
