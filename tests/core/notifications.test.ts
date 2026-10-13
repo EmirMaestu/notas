@@ -236,6 +236,60 @@ describe('aviso de asignación', () => {
   });
 });
 
+describe('aviso de asignación: tareas cerradas', () => {
+  it('no avisa si la tarea está completada o en la papelera', async () => {
+    const { owner, member, shared } = await createSharingFixture(db);
+    await savePushSubscription(db, member.id, subscriptionInput(2));
+    const done = await createTask(db, owner.id, { title: 'Hecha', listId: shared.id, assigneeId: member.id });
+    const trashed = await createTask(db, owner.id, { title: 'Borrada', listId: shared.id, assigneeId: member.id });
+    await completeTask(db, owner.id, done.id);
+    await deleteTask(db, owner.id, trashed.id);
+    const { send, calls } = fakeSender();
+    expect(await notifyAssignment(db, { actorId: owner.id, taskId: done.id }, send, FIRE)).toBe(false);
+    expect(await notifyAssignment(db, { actorId: owner.id, taskId: trashed.id }, send, FIRE)).toBe(false);
+    expect(calls).toEqual([]);
+  });
+});
+
+describe('aviso de asignación: anti-spam', () => {
+  /** Principio de una franja de 10 minutos. */
+  const START = new Date('2030-06-10T18:00:00Z');
+  const startPlus = (ms: number) => new Date(START.getTime() + ms);
+
+  async function setup() {
+    const f = await createSharingFixture(db);
+    await savePushSubscription(db, f.member.id, subscriptionInput(2));
+    const task = await createTask(db, f.owner.id, { title: 'Comprar pan', listId: f.shared.id, assigneeId: f.member.id });
+    return { ...f, task };
+  }
+
+  it('asignar y desasignar una y otra vez la misma tarea avisa una sola vez cada 10 minutos', async () => {
+    const { owner, member, task } = await setup();
+    const { send, calls } = fakeSender();
+    const notify = (now: Date) => notifyAssignment(db, { actorId: owner.id, taskId: task.id }, send, now);
+    expect(await notify(START)).toBe(true);
+    expect(await notify(startPlus(MIN))).toBe(false);
+    expect(await notify(startPlus(9 * MIN))).toBe(false);
+    expect(calls).toHaveLength(1);
+    expect(await notify(startPlus(10 * MIN))).toBe(true); // otra franja de 10 minutos
+    expect(calls).toHaveLength(2);
+    const keys = (await db.select().from(notificationDeliveries)).map((d) => d.fireKey);
+    expect(keys.every((k) => k.startsWith(`${task.id}:${member.id}:`))).toBe(true);
+  });
+
+  it('el limitador (actor, asignado) corta antes de mandar y no gasta cupo si ya estaba avisado', async () => {
+    const { owner, task } = await setup();
+    const { send, calls } = fakeSender();
+    const allow = vi.fn().mockReturnValueOnce(true).mockReturnValue(false);
+    const notify = (now: Date) => notifyAssignment(db, { actorId: owner.id, taskId: task.id }, send, now, allow);
+    expect(await notify(START)).toBe(true);
+    expect(await notify(START)).toBe(false); // mismo aviso: ni consulta el limitador
+    expect(allow).toHaveBeenCalledTimes(1);
+    expect(await notify(startPlus(10 * MIN))).toBe(false); // otra franja, pero el limitador dice que no
+    expect(calls).toHaveLength(1);
+  });
+});
+
 describe('entregas, prueba y corrida completa', () => {
   it('claimDelivery es idempotente y purgeOldDeliveries borra lo de más de 30 días', async () => {
     const user = await createTestUser(db);

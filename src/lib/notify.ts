@@ -1,6 +1,7 @@
 import { notifyAssignment } from '@/core/notifications';
 import type { SendPush } from '@/core/push-subscriptions';
 import type { DB } from '@/db/types';
+import { assignmentNotifyLimiter } from './limits';
 import { getPushSender } from './push';
 
 /** ¿Hay que avisar? La tarea quedó asignada a alguien distinto de antes y que no es quien la asignó. */
@@ -17,7 +18,7 @@ export async function notifyAssignmentSafely(
 ): Promise<void> {
   if (!send) return;
   try {
-    await notifyAssignment(db, { actorId, taskId }, send, now);
+    await notifyAssignment(db, { actorId, taskId }, send, now, (actor, assignee) => assignmentNotifyLimiter.check(`${actor}:${assignee}`));
   } catch (err) {
     console.error('[notificaciones] falló el aviso de asignación:', err);
   }

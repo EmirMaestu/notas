@@ -33,3 +33,17 @@ describe('notifyAssignmentSafely', () => {
     errorSpy.mockRestore();
   });
 });
+
+describe('límite de avisos de asignación por pareja', () => {
+  it('como mucho 10 por hora de la misma persona a la misma persona', async () => {
+    const db = await createTestDb();
+    const { owner, member, shared } = await createSharingFixture(db);
+    await savePushSubscription(db, member.id, subscriptionInput(2));
+    const { send, calls } = fakeSender();
+    for (let i = 1; i <= 11; i++) {
+      const task = await createTask(db, owner.id, { title: `Tarea ${i}`, listId: shared.id, assigneeId: member.id });
+      await notifyAssignmentSafely(db, owner.id, task.id, send);
+    }
+    expect(calls).toHaveLength(10);
+  });
+});

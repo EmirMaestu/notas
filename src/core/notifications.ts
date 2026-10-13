@@ -20,6 +20,8 @@ export const REMINDER_WINDOW_MS = 10 * 60_000;
 /** El resumen diario sale si la hora local está en [hora elegida, hora elegida + 10 min). */
 export const DIGEST_WINDOW_MINUTES = 10;
 export const DELIVERY_RETENTION_DAYS = 30;
+/** Un mismo aviso de asignación (tarea + persona) no se repite dentro de esta franja. */
+export const ASSIGNMENT_DEDUPE_MS = 10 * 60_000;
 const MAX_TITLE = 120;
 
 /**
@@ -268,25 +270,33 @@ export async function runNotifications(db: DB, now: Date, send: SendPush, option
 }
 
 /**
- * Avisa a la persona asignada a la tarea, si no es quien asignó, tiene el aviso prendido y accede a la lista.
+ * Avisa a la persona asignada a la tarea (pendiente y fuera de la papelera), si no es quien asignó, tiene el aviso prendido y accede a la lista.
  * El llamador decide si la asignación cambió. Devuelve true si llegó a algún dispositivo.
+ * Anti-spam: a lo sumo un aviso por (tarea, persona) cada 10 minutos (asignar y desasignar en bucle no repite),
+ * y `allow` es el tope por pareja (quien asigna, a quién), que se consulta solo si el aviso es nuevo.
  */
 export async function notifyAssignment(
   db: DB, { actorId, taskId }: { actorId: string; taskId: string }, send: SendPush, now: Date,
+  allow: (actorId: string, assigneeId: string) => boolean = () => true,
 ): Promise<boolean> {
   if (!isUuid(taskId)) return false;
   const [task] = await db
-    .select({ id: tasks.id, title: tasks.title, listId: tasks.listId, assigneeId: tasks.assigneeId, deletedAt: tasks.deletedAt })
+    .select({
+      id: tasks.id, title: tasks.title, listId: tasks.listId, assigneeId: tasks.assigneeId, deletedAt: tasks.deletedAt,
+      status: tasks.status,
+    })
     .from(tasks)
     .where(eq(tasks.id, taskId));
-  if (!task || !task.assigneeId || task.assigneeId === actorId || task.deletedAt) return false;
+  if (!task || !task.assigneeId || task.assigneeId === actorId || task.deletedAt || task.status !== 'pending') return false;
   const [assignee] = await db.select({ notifyAssigned: users.notifyAssigned }).from(users).where(eq(users.id, task.assigneeId));
   if (!assignee?.notifyAssigned) return false;
   if (!(await canAccessList(db, task.assigneeId, task.listId))) return false;
   const [actor] = await db.select({ name: users.name, email: users.email }).from(users).where(eq(users.id, actorId));
   const who = actor ? actor.name.trim() || actor.email : 'Alguien';
-  const fireKey = `${task.id}:${now.toISOString()}`;
+  const bucket = Math.floor(now.getTime() / ASSIGNMENT_DEDUPE_MS);
+  const fireKey = `${task.id}:${task.assigneeId}:${bucket}`;
   if (!(await claimDelivery(db, { userId: task.assigneeId, kind: 'assigned', fireKey, taskId: task.id, now }))) return false;
+  if (!allow(actorId, task.assigneeId)) return false;
   const report = await sendToUser(db, task.assigneeId, {
     title: 'Te asignaron una tarea',
     body: `${who} te asignó «${clip(task.title)}»`,
