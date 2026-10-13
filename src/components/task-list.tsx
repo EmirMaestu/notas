@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { List } from '@/core/lists';
+import type { Folder, ListWithRole } from '@/core/lists';
 import type { TaskWithDetails } from '@/core/tasks';
+import { listDisplayName } from '@/lib/list-groups';
 import { createdViaClient, groupTasksByCompletedDay, groupTasksByDate, type TaskGroup } from '@/lib/format';
 import { TaskItem, type TaskItemVariant } from './task-item';
 import { useToast } from './toast';
@@ -11,10 +12,10 @@ import { useWorkspace } from './workspace-context';
 export type TaskGrouping = 'date' | 'completed' | 'none';
 
 export function TaskList({
-  tasks, selectedId, grouping, today, now, timezone, lists, showListName, variant, empty,
+  tasks, selectedId, grouping, today, now, timezone, lists, folders, showListName, variant, empty,
 }: {
   tasks: TaskWithDetails[]; selectedId?: string; grouping: TaskGrouping; today: string; now: string; timezone: string;
-  lists: List[]; showListName: boolean; variant: TaskItemVariant; empty: React.ReactNode;
+  lists: ListWithRole[]; folders: Folder[]; showListName: boolean; variant: TaskItemVariant; empty: React.ReactNode;
 }) {
   // Ids ya vistos: las tareas que aparecen después (otra pestaña, la IA, «Deshacer») entran con fundido.
   const [initial] = useState(() => new Set(tasks.map((t) => t.id)));
@@ -38,6 +39,7 @@ export function TaskList({
 
   if (tasks.length === 0) return <>{empty}</>;
   const listInfo = new Map(lists.map((l) => [l.id, l]));
+  const foldersById = new Map(folders.map((f) => [f.id, f]));
   const groups: TaskGroup<TaskWithDetails>[] =
     grouping === 'date' ? groupTasksByDate(tasks, today)
     : grouping === 'completed' ? groupTasksByCompletedDay(tasks, today, timezone)
@@ -59,7 +61,7 @@ export function TaskList({
                 <TaskItem
                   key={task.id} task={task} selected={task.id === selectedId} today={today} now={now} timezone={timezone}
                   variant={variant} isNew={!seen.current.has(task.id)}
-                  list={showListName && info ? { name: info.name, color: info.color } : undefined}
+                  list={showListName && info ? { name: listDisplayName(info, foldersById), color: info.color } : undefined}
                 />
               );
             })}

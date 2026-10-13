@@ -24,10 +24,12 @@ export function weekdayName(isoDate: string): string {
   return WEEKDAYS[dayOfWeek(isoDate)];
 }
 
-export function formatList(list: ListWithRole) {
+/** Lista de una persona: `folderNames` es id → nombre de sus carpetas (una lista compartida con ella nunca trae carpeta). */
+export function formatList(list: ListWithRole, folderNames: ReadonlyMap<string, string>) {
   return {
     id: list.id,
     name: list.name,
+    folder: list.folderId ? folderNames.get(list.folderId) ?? null : null,
     color: list.color,
     is_inbox: list.isInbox,
     role: list.role,
@@ -42,8 +44,14 @@ export interface FormatTaskOptions {
   truncateDescription?: boolean;
 }
 
-/** `listNames`: id → nombre de las listas a las que accede el usuario. */
-export function formatTask(task: TaskWithDetails, listNames: ReadonlyMap<string, string>, opts: FormatTaskOptions) {
+/** Nombre de una lista y de su carpeta (null = sin carpeta, o compartida con el usuario). */
+export interface ListLabel {
+  name: string;
+  folder: string | null;
+}
+
+/** `lists`: id → nombre y carpeta de las listas a las que accede el usuario. */
+export function formatTask(task: TaskWithDetails, lists: ReadonlyMap<string, ListLabel>, opts: FormatTaskOptions) {
   const long = opts.truncateDescription === true && task.description.length > DESCRIPTION_PREVIEW_CHARS;
   return {
     id: task.id,
@@ -51,7 +59,8 @@ export function formatTask(task: TaskWithDetails, listNames: ReadonlyMap<string,
     description: long ? `${task.description.slice(0, DESCRIPTION_PREVIEW_CHARS)}…` : task.description,
     ...(long ? { description_truncated: true } : {}),
     list_id: task.listId,
-    list_name: listNames.get(task.listId) ?? null,
+    list_name: lists.get(task.listId)?.name ?? null,
+    list_folder: lists.get(task.listId)?.folder ?? null,
     due_date: task.dueDate,
     due_time: task.dueTime,
     priority: task.priority,

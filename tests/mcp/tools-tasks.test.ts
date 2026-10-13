@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addDays, todayIn } from '@/core/dates';
+import { createFolder, updateList } from '@/core/lists';
 import { getTask } from '@/core/tasks';
 import { DEFAULT_TIMEZONE } from '@/core/users';
 import type { DB } from '@/db/types';
@@ -17,7 +18,7 @@ beforeEach(async () => {
 });
 
 const TASK_KEYS = [
-  'assignee', 'completed_at', 'deleted_at', 'description', 'due_date', 'due_time', 'id', 'list_id', 'list_name',
+  'assignee', 'completed_at', 'deleted_at', 'description', 'due_date', 'due_time', 'id', 'list_folder', 'list_id', 'list_name',
   'other_tags', 'priority', 'status', 'subtasks', 'tags', 'title',
 ];
 
@@ -30,13 +31,28 @@ describe('crear y leer tareas', () => {
     });
     expect(Object.keys(task).sort()).toEqual(TASK_KEYS);
     expect(task).toMatchObject({
-      title: 'Pagar luz', description: 'Antes del 15', list_id: list.id, list_name: 'Casa', due_date: '2026-10-20',
+      title: 'Pagar luz', description: 'Antes del 15', list_id: list.id, list_name: 'Casa', list_folder: null, due_date: '2026-10-20',
       due_time: '09:30', priority: 5, status: 'pending', completed_at: null, deleted_at: null,
       tags: ['casa', 'pagos'], other_tags: [], assignee: null,
     });
     expect(task.subtasks.map((s: { title: string; done: boolean }) => [s.title, s.done]))
       .toEqual([['Buscar factura', false], ['Pagar', false]]);
     expect(await callOk(ctx, 'get_task', { task_id: task.id })).toEqual(task);
+  });
+
+  it('list_folder da la carpeta de la lista (listas con el mismo nombre se distinguen)', async () => {
+    const folder = await createFolder(db, ctx.userId, { name: 'Rider G' });
+    const a = await callOk(ctx, 'create_list', { name: 'Tareas' });
+    const b = await callOk(ctx, 'create_list', { name: 'Tareas' });
+    await updateList(db, ctx.userId, a.id, { folderId: folder.id });
+    const ta = await callOk(ctx, 'create_task', { title: 'En carpeta', list_id: a.id });
+    const tb = await callOk(ctx, 'create_task', { title: 'Suelta', list_id: b.id });
+    expect(ta).toMatchObject({ list_id: a.id, list_name: 'Tareas', list_folder: 'Rider G' });
+    expect(tb).toMatchObject({ list_id: b.id, list_name: 'Tareas', list_folder: null });
+    const listed = (await callOk(ctx, 'list_tasks')).tasks;
+    expect(Object.fromEntries(listed.map((t: { id: string; list_folder: string | null }) => [t.id, t.list_folder])))
+      .toEqual({ [ta.id]: 'Rider G', [tb.id]: null });
+    expect(await callOk(ctx, 'move_task', { task_id: tb.id, list_id: a.id })).toMatchObject({ list_folder: 'Rider G' });
   });
 
   it('sin lista va a la Bandeja', async () => {

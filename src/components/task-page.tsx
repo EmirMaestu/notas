@@ -1,12 +1,11 @@
 import { todayIn } from '@/core/dates';
 import { NotFoundError } from '@/core/errors';
-import { listFolders, type Folder } from '@/core/lists';
 import { getListMembers, type ListMember } from '@/core/members';
 import { getTask, listTasks, type ListTasksFilter, type TaskWithDetails } from '@/core/tasks';
 import { getDb } from '@/db';
 import type { QuickAddContext } from '@/app/app/actions';
 import { requireUser } from '@/lib/auth';
-import { getLists } from '@/lib/data';
+import { getFolders, getLists } from '@/lib/data';
 import { TaskWorkspace } from './task-workspace';
 
 export async function TaskPage({
@@ -14,7 +13,7 @@ export async function TaskPage({
 }: { title: string; filter: ListTasksFilter; context: QuickAddContext; selectedTaskId?: string }) {
   const user = await requireUser();
   const db = await getDb();
-  const [tasks, lists] = await Promise.all([listTasks(db, user.id, filter), getLists(user.id)]);
+  const [tasks, lists, folders] = await Promise.all([listTasks(db, user.id, filter), getLists(user.id), getFolders(user.id)]);
   let selected: TaskWithDetails | null = null;
   if (selectedTaskId) {
     selected = await getTask(db, user.id, selectedTaskId, { includeDeleted: filter.view === 'trash' }).catch((err) => {
@@ -28,11 +27,9 @@ export async function TaskPage({
   // En la papelera el detalle es de solo lectura: no hace falta.
   const needsMembers = selected && !selected.deletedAt && (selectedList?.shared || selected.assigneeId);
   const members: ListMember[] = selected && needsMembers ? await getListMembers(db, user.id, selected.listId) : [];
-  // Vista de una lista: su rol, miembros (pila del encabezado) y carpetas (diálogo de la lista).
+  // Vista de una lista: su rol y miembros (pila del encabezado). Las carpetas van siempre: el diálogo de la lista y los nombres «Carpeta › Lista» las usan.
   const list = filter.listId ? lists.find((l) => l.id === filter.listId) : undefined;
-  const [listMembers, folders]: [ListMember[], Folder[]] = list
-    ? await Promise.all([list.shared ? getListMembers(db, user.id, list.id) : Promise.resolve([]), listFolders(db, user.id)])
-    : [[], []];
+  const listMembers: ListMember[] = list?.shared ? await getListMembers(db, user.id, list.id) : [];
   return (
     <TaskWorkspace
       title={title} tasks={tasks} selected={selected} lists={lists} members={members} context={context}

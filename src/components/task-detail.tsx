@@ -4,10 +4,11 @@ import { ArrowLeft, Calendar, Clock, Flag, List as ListIcon, RotateCcw, Sparkles
 import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from 'react';
 import { isValidIsoDate, isValidTime } from '@/core/dates';
-import type { List } from '@/core/lists';
+import type { Folder, ListWithRole } from '@/core/lists';
 import type { ListMember } from '@/core/members';
 import type { TaskWithDetails, UpdateTaskInput } from '@/core/tasks';
 import type { ActionResult } from '@/lib/action-result';
+import { groupListsByFolder, listDisplayName } from '@/lib/list-groups';
 import { createdViaClient, formatAgo, formatDetailDate, formatShortDate, localTime, trashNote } from '@/lib/format';
 import { useSyncedField } from '@/lib/synced-field';
 import { moveTaskAction, restoreTaskAction, toggleTaskAction, updateTaskAction } from '@/app/app/actions';
@@ -61,9 +62,9 @@ function useAutoGrow(ref: React.RefObject<HTMLTextAreaElement | null>, value: st
 }
 
 export function TaskDetail({
-  task, lists, members, currentUserId, today, now, timezone,
+  task, lists, folders, members, currentUserId, today, now, timezone,
 }: {
-  task: TaskWithDetails; lists: List[]; members: ListMember[]; currentUserId: string;
+  task: TaskWithDetails; lists: ListWithRole[]; folders: Folder[]; members: ListMember[]; currentUserId: string;
   today: string; now: string; timezone: string;
 }) {
   const inTrash = task.deletedAt !== null;
@@ -183,6 +184,8 @@ export function TaskDetail({
   }
 
   const currentList = lists.find((l) => l.id === listId);
+  const foldersById = new Map(folders.map((f) => [f.id, f]));
+  const currentListName = currentList ? listDisplayName(currentList, foldersById) : '';
   const aiClient = createdViaClient(task.createdVia);
   const createdWhen = `el ${formatShortDate(task.createdAt, timezone)} a las ${localTime(task.createdAt, timezone)}`;
   const header = (
@@ -194,7 +197,7 @@ export function TaskDetail({
       {currentList && (
         <span className="inline-flex min-w-0 items-center gap-[5px] text-meta text-muted">
           <span aria-hidden="true" className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ backgroundColor: currentList.color ?? 'var(--muted)' }} />
-          <span className="truncate">{currentList.name}</span>
+          <span className="truncate">{currentListName}</span>
         </span>
       )}
       <span className="flex-1" />
@@ -301,7 +304,13 @@ export function TaskDetail({
               label="Lista" value={listId} onChange={move} leadingInset="dot"
               leading={<span className="h-2 w-2 rounded-full" style={{ backgroundColor: currentList?.color ?? 'var(--muted)' }} />}
             >
-              {lists.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+              {groupListsByFolder(lists, folders).map((g) => {
+                // El select cerrado muestra la opción elegida: con `label` se lee «Carpeta › Lista» en la píldora, y abierto cada lista sigue bajo el título de su carpeta.
+                const options = g.lists.map((l) => (
+                  <option key={l.id} value={l.id} label={l.id === listId ? currentListName : undefined}>{l.name}</option>
+                ));
+                return g.label === null ? options : <optgroup key={g.label} label={g.label}>{options}</optgroup>;
+              })}
             </SelectPill>
           </dd>
 
