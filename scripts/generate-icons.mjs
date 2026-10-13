@@ -52,4 +52,10 @@ writeFileSync('public/icons/icon-192.png', await png(full, 192));
 writeFileSync('public/icons/icon-512.png', await png(full, 512));
 writeFileSync('public/icons/maskable-512.png', await png(fullBleed(full, 0.76), 512));
 
+// Badge de las notificaciones (Android lo pinta como silueta): solo el tilde blanco sobre transparente.
+const badge = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <path d="M128 268 L216 356 L384 184" fill="none" stroke="#FFFFFF" stroke-width="76" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+writeFileSync('public/icons/badge-96.png', await png(badge, 96));
+
 console.log('íconos generados');
