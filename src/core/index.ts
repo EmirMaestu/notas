@@ -9,6 +9,7 @@ export * from './errors';
 export * from './lists';
 export * from './members';
 export * from './notification-prefs';
+export * from './notifications';
 export * from './oauth';
 export * from './priority';
 export * from './push-subscriptions';

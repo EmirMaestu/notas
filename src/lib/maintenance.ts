@@ -1,3 +1,4 @@
+import { purgeOldDeliveries } from '@/core/notifications';
 import { purgeExpiredOAuthData } from '@/core/oauth';
 import { purgeExpiredSessions } from '@/core/sessions';
 import { purgeTrash } from '@/core/tasks';
@@ -14,6 +15,7 @@ export interface MaintenanceReport {
   oauthCodes: number;
   oauthTokens: number;
   oauthClients: number;
+  deliveries: number;
 }
 
 export type MaintenanceRun = (db: DB, now: Date) => Promise<MaintenanceReport>;
@@ -22,18 +24,22 @@ export type Logger = Pick<Console, 'log' | 'error'>;
 
 /**
  * Limpieza de TODOS los usuarios: sesiones vencidas, tareas con más de 30 días en la papelera y datos OAuth
- * vencidos (códigos, tokens y clientes de registro dinámico huérfanos). Idempotente.
+ * vencidos (códigos, tokens y clientes de registro dinámico huérfanos) y el registro de avisos de más de 30 días.
+ * Idempotente.
  */
 export async function runMaintenance(db: DB, now: Date = new Date()): Promise<MaintenanceReport> {
   const sessions = await purgeExpiredSessions(db, now);
   const trash = await purgeTrash(db, now);
   const oauth = await purgeExpiredOAuthData(db, now);
-  return { sessions, trash, oauthCodes: oauth.codes, oauthTokens: oauth.tokens, oauthClients: oauth.clients };
+  const deliveries = await purgeOldDeliveries(db, now);
+  return {
+    sessions, trash, oauthCodes: oauth.codes, oauthTokens: oauth.tokens, oauthClients: oauth.clients, deliveries,
+  };
 }
 
 export function formatMaintenanceReport(r: MaintenanceReport): string {
   return `[mantenimiento] sesiones vencidas: ${r.sessions}, papelera: ${r.trash}, `
-    + `OAuth: ${r.oauthCodes} códigos, ${r.oauthTokens} tokens, ${r.oauthClients} clientes`;
+    + `OAuth: ${r.oauthCodes} códigos, ${r.oauthTokens} tokens, ${r.oauthClients} clientes, avisos: ${r.deliveries}`;
 }
 
 /** La limpieza programada no corre en tests ni si se desactiva con NOTAS_DISABLE_MAINTENANCE=1. */
