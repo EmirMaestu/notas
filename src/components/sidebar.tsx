@@ -150,13 +150,14 @@ export function Sidebar({
                 <Icon size={16} aria-hidden="true" className={`shrink-0 ${active ? '' : 'opacity-85'}`} />
                 <span className="min-w-0 flex-1 truncate">{label}</span>
                 {n > 0 && (
-                  <>
-                    <span aria-hidden="true" className="text-meta font-medium tabular-nums text-muted">{n > 99 ? '99+' : n}</span>
-                    {/* Descripción (no nombre): el link sigue llamándose "Hoy" y el lector agrega "2 pendientes". */}
-                    <span id={`count-${count}`} className="sr-only">{n} {n === 1 ? 'pendiente' : 'pendientes'}</span>
-                  </>
+                  <span aria-hidden="true" className="text-meta font-medium tabular-nums text-muted">{n > 99 ? '99+' : n}</span>
                 )}
               </NavLink>
+              {/* Descripción (no nombre): va FUERA del link porque el texto de adentro forma parte del nombre
+                  accesible. Así el link se llama "Hoy" y el lector agrega "2 pendientes". */}
+              {n > 0 && (
+                <span id={`count-${count}`} className="sr-only">{n} {n === 1 ? 'pendiente' : 'pendientes'}</span>
+              )}
             </li>
           );
         })}
