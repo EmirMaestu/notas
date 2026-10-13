@@ -6,6 +6,8 @@ import { addDays, isValidIsoDate, isValidTime, todayIn } from './dates';
 import { NotFoundError, ValidationError, isForeignKeyViolation, isUniqueViolation, isUuid } from './errors';
 import { getInbox, getList } from './lists';
 import { PRIORITIES, type Priority } from './priority';
+import { checkReminderFits, parseReminderOption, type ReminderOption } from './reminder-options';
+import { applyDefaultReminder, remindersFor, writeReminder } from './reminders';
 import { ensureTags, normalizeTagName } from './tags';
 import { getUser } from './users';
 
@@ -25,6 +27,8 @@ export type TaskWithDetails = Task & {
   /** Etiquetas que pusieron otros usuarios con acceso a la tarea, sin repetir nombres de `tags`. */
   otherTags: string[];
   assignee: TaskAssignee | null;
+  /** Recordatorio del usuario que consulta (cada persona tiene el suyo), o null. */
+  reminder: ReminderOption | null;
 };
 
 export interface SubtaskInput {
@@ -50,6 +54,9 @@ export interface CreateTaskInput {
   assigneeId?: string | null;
   /** Origen de la tarea: 'web' o 'mcp:<cliente>'. Solo al crear; no se edita. */
   createdVia?: string | null;
+  /** Recordatorio de quien crea/modifica: una opción de REMINDER_OPTIONS, null = ninguno. Sin el campo: no se toca
+   *  (al crear con hora, o al ponerle hora a una tarea que no tenía, se aplica el recordatorio por defecto). */
+  reminder?: ReminderOption | null;
 }
 
 export interface UpdateTaskInput {
@@ -64,6 +71,9 @@ export interface UpdateTaskInput {
   subtasks?: (string | SubtaskInput)[];
   /** Id del usuario asignado (dueño o miembro de la lista); null quita la asignación. */
   assigneeId?: string | null;
+  /** Recordatorio de quien crea/modifica: una opción de REMINDER_OPTIONS, null = ninguno. Sin el campo: no se toca
+   *  (al crear con hora, o al ponerle hora a una tarea que no tenía, se aplica el recordatorio por defecto). */
+  reminder?: ReminderOption | null;
 }
 
 // ---------- Validación ----------
@@ -181,6 +191,7 @@ async function hydrate(db: DB, viewerId: string, rows: Task[]): Promise<TaskWith
       .from(users)
       .where(inArray(users.id, assigneeIds))
     : [];
+  const reminders = await remindersFor(db, viewerId, ids);
   return rows.map((row) => {
     const onTask = tagRows.filter((t) => t.taskId === row.id);
     const own = onTask.filter((t) => t.ownerId === viewerId).map((t) => t.name);
@@ -191,6 +202,7 @@ async function hydrate(db: DB, viewerId: string, rows: Task[]): Promise<TaskWith
       tags: own,
       otherTags: [...new Set(others)],
       assignee: people.find((p) => p.id === row.assigneeId) ?? null,
+      reminder: reminders.get(row.id) ?? null,
     };
   });
 }
@@ -289,6 +301,8 @@ export async function createTask(db: DB, userId: string, input: CreateTaskInput)
   const status = input.status ?? 'pending';
   const description = checkDescription(input.description ?? '');
   const createdVia = checkCreatedVia(input.createdVia);
+  const reminder = input.reminder !== undefined ? parseReminderOption(input.reminder) : undefined;
+  if (reminder !== undefined) checkReminderFits(reminder, dueDate, dueTime);
 
   try {
     return await db.transaction(async (tx) => {
@@ -307,6 +321,8 @@ export async function createTask(db: DB, userId: string, input: CreateTaskInput)
         .returning();
       if (subtaskItems.length) await replaceSubtasks(tx, task.id, subtaskItems);
       if (tagNames.length) await replaceTags(tx, userId, task.id, tagNames);
+      if (reminder !== undefined) await writeReminder(tx, userId, task.id, reminder);
+      else if (dueTime !== null) await applyDefaultReminder(tx, userId, task.id);
       return getTask(tx, userId, task.id);
     });
   } catch (err) {
@@ -328,6 +344,7 @@ export async function updateTask(
   if (input.priority !== undefined) patch.priority = checkPriority(input.priority);
   const subtaskItems = input.subtasks !== undefined ? normalizeSubtasks(input.subtasks) : undefined;
   const tagNames = input.tags !== undefined ? normalizeTags(input.tags) : undefined;
+  const reminder = input.reminder !== undefined ? parseReminderOption(input.reminder) : undefined;
 
   return db.transaction(async (tx) => {
     const current = await findTask(tx, userId, taskId, { forUpdate: true });
@@ -338,7 +355,13 @@ export async function updateTask(
       Object.assign(patch, checkDue(dueDate, dueTime));
     }
     if (input.assigneeId !== undefined) patch.assigneeId = await checkAssignee(tx, input.assigneeId, current.listId);
+    // Fecha y hora con las que queda la tarea (para validar y para el recordatorio por defecto).
+    const finalDate = patch.dueDate !== undefined ? patch.dueDate : current.dueDate;
+    const finalTime = patch.dueTime !== undefined ? patch.dueTime : current.dueTime;
+    if (reminder !== undefined) checkReminderFits(reminder, finalDate, finalTime);
     await tx.update(tasks).set({ ...patch, updatedAt: new Date() }).where(eq(tasks.id, current.id));
+    if (reminder !== undefined) await writeReminder(tx, userId, current.id, reminder);
+    else if (current.dueTime === null && finalTime !== null) await applyDefaultReminder(tx, userId, current.id);
     if (subtaskItems) await replaceSubtasks(tx, current.id, subtaskItems);
     if (tagNames) await replaceTags(tx, userId, current.id, tagNames);
     return getTask(tx, userId, current.id);

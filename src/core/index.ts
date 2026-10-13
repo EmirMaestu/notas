@@ -12,6 +12,8 @@ export * from './oauth';
 export * from './priority';
 export * from './sessions';
 export * from './quick-add';
+export * from './reminder-options';
+export * from './reminders';
 export * from './tags';
 export * from './tasks';
 export * from './users';
