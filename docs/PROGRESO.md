@@ -10,6 +10,7 @@
 | 4 — MCP | `/mcp` sin estado (SDK `@modelcontextprotocol/server` 2.3.1), OAuth 2.1 (DCR + PKCE S256 + `resource` + `iss`, rotación de refresh), tokens personales `ntk_`, Configuración → "Conexión con IA" | Hecho |
 | 5 — Despliegue | Docker Compose (app standalone + Postgres 16) detrás de un reverse proxy, migraciones al arrancar, limpieza diaria en el proceso, `/api/health`, backups diarios (14 días), `deploy/deploy.sh` con releases y vuelta atrás automática | Hecho |
 | 6 — Rediseño | Interfaz del rediseño de Claude Design (petróleo, Manrope + Geist Mono), tema claro/oscuro con opción manual, celular con cajón y detalle a pantalla completa, toasts con deshacer, estados vacíos/cargando/error, atajos de teclado, «Creada por IA» (`tasks.created_via`) | Hecho |
+| 7 — Notificaciones | Web Push (VAPID, `web-push`): recordatorios por persona y tarea, recordatorio por defecto, resumen diario, aviso de asignación, Configuración → Notificaciones, `reminder` en el MCP, service worker `public/sw.js` | Hecho |
 
 ## Cómo desplegar tu propia instancia
 
@@ -17,7 +18,7 @@ Resumen; el detalle está en el [README](../README.md) y, para el diseño comple
 [`superpowers/plans/2026-10-10-notas-5-despliegue.md`](superpowers/plans/2026-10-10-notas-5-despliegue.md).
 
 1. En tu VPS (con Docker y Compose) crear `~/notas/.env` a partir de `deploy/.env.production.example`
-   (`chmod 600`): `POSTGRES_PASSWORD`, `INVITE_CODE`, `APP_URL=https://notas.example.com`, `TRUSTED_PROXY_HOPS`.
+   (`chmod 600`): `POSTGRES_PASSWORD`, `INVITE_CODE`, `APP_URL=https://notas.example.com`, `TRUSTED_PROXY_HOPS`. Opcional: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT` para las notificaciones push (ver Plan 7, Task B1).
 2. Configurar el reverse proxy hacia `127.0.0.1:3200`. Con el Caddy del sistema: copiar `deploy/notas.caddy`
    (con tu dominio) a `/etc/caddy/notas.caddy` e importarlo al final del `Caddyfile` con `import notas.caddy`;
    luego `caddy validate` y `systemctl reload caddy`.
@@ -35,6 +36,7 @@ Logs: `docker logs --tail 100 notas-app-1`.
 - Client ID Metadata Documents (CIMD) y scopes de solo lectura en OAuth.
 - Copia automática de los backups fuera de la VPS y monitoreo externo de `/api/health`.
 - Registrar quién completa o modifica una tarea (`updated_via`) para los toasts «Claude completó…».
+- Notificaciones: varios recordatorios por tarea, recordatorios de tareas repetitivas (cuando existan) y aviso cuando alguien completa una tarea compartida.
 
 ## Notas de desarrollo
 
