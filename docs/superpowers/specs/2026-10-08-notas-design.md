@@ -144,6 +144,31 @@ Pedido por el usuario después del Plan 2. Modelo inspirado en TickTick:
 - **MCP**: herramientas `share_list`, `unshare_list`, `list_members`, `leave_list` y el campo
   `assignee` (email) en `create_task`/`update_task`, y vista `assigned` en `list_tasks`.
 
+## Notificaciones (agregado 2026-10-13)
+
+Pedido por el usuario después del Plan 6. Web Push estándar (VAPID), sin servicios de terceros más allá de los
+servicios de push de cada navegador (FCM, Mozilla, Apple).
+
+- **Recordatorios por persona y por tarea** (`task_reminders`, PK `(task_id, user_id)`): en tareas con hora,
+  `at_time`, `5m`, `15m`, `30m`, `1h` o `1d` antes; en tareas sin hora, `same_day` o `day_before` a la «hora de
+  los recordatorios sin hora» del usuario (09:00 por defecto). Se calculan en la zona horaria del usuario. En una
+  lista compartida cada miembro pone el suyo; solo se puede en tareas a las que se tiene acceso, y si alguien
+  pierde el acceso su recordatorio deja de sonar.
+- **Recordatorio por defecto** (ninguno / a la hora / 15 min / 1 h antes): se agrega al crear una tarea con hora
+  o al ponerle hora, sin pisar uno elegido.
+- **Resumen diario** opcional (apagado por defecto, 08:00): «N para hoy · M vencidas», solo si hay algo.
+- **Aviso de asignación** (prendido por defecto) cuando otra persona te asigna una tarea, desde la web o el MCP.
+- **Dispositivos**: cada navegador se activa desde Configuración → Notificaciones con un clic (en iPhone/iPad,
+  iOS 16.4+ y con Notas agregada a la pantalla de inicio). Hasta 10 por persona; las suscripciones que el
+  servicio de push da por muertas (404/410) se borran solas. Botón «Enviar prueba».
+- **Entrega**: un programador dentro del proceso revisa cada minuto; un aviso sale a lo sumo una vez
+  (`notification_deliveries` con clave única) y uno atrasado más de 10 minutos se descarta. Contenido mínimo:
+  título de la tarea y fecha/hora; al tocarlo abre la tarea.
+- **MCP**: `create_task` y `update_task` aceptan `reminder` (las mismas opciones, o `null`) para quien llama, y
+  las tareas devuelven el `reminder` de quien llama.
+- **Configuración del servidor**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. Sin ellas la app
+  funciona igual y las notificaciones quedan apagadas (los recordatorios se guardan igual).
+
 ## Pruebas
 
 - Unitarias (Vitest): capa `core` (aislamiento por usuario, vistas Hoy/7 días con zona

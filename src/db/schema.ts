@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
-  boolean, date, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
+  boolean, check, date, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core';
 import { DEFAULT_TIMEZONE } from '../core/dates';
 
@@ -13,6 +13,15 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   name: text('name').notNull().default(''),
   timezone: text('timezone').notNull().default(DEFAULT_TIMEZONE),
+  /** Recordatorio por defecto para tareas con hora (minutos antes: 0, 15 o 60). NULL = ninguno. */
+  reminderDefaultMinutes: integer('reminder_default_minutes'),
+  /** Hora local (HH:mm) de los recordatorios «el mismo día» / «el día anterior». */
+  allDayReminderTime: text('all_day_reminder_time').notNull().default('09:00'),
+  /** Resumen diario de Hoy y vencidas, a `digest_time` (hora local). */
+  digestEnabled: boolean('digest_enabled').notNull().default(false),
+  digestTime: text('digest_time').notNull().default('08:00'),
+  /** Avisar cuando otra persona me asigna una tarea. */
+  notifyAssigned: boolean('notify_assigned').notNull().default(true),
   createdAt: createdAt(),
 });
 
@@ -166,4 +175,53 @@ export const oauthTokens = pgTable('oauth_tokens', {
   index('oauth_tokens_user_idx').on(t.userId),
   index('oauth_tokens_client_idx').on(t.clientId),
   index('oauth_tokens_family_idx').on(t.familyId),
+]);
+
+/**
+ * Recordatorio de una persona en una tarea (cada miembro de una lista compartida tiene el suyo).
+ * kind 'before' = `offset_minutes` antes de la fecha+hora; 'same_day' / 'day_before' = a `users.all_day_reminder_time`.
+ */
+export const taskReminders = pgTable('task_reminders', {
+  taskId: uuid('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  kind: text('kind', { enum: ['before', 'same_day', 'day_before'] }).notNull(),
+  offsetMinutes: integer('offset_minutes'),
+  /** Cuándo se puso o cambió: un instante anterior a esto no se avisa (sería un aviso atrasado). */
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  primaryKey({ columns: [t.taskId, t.userId] }),
+  index('task_reminders_user_idx').on(t.userId),
+  check(
+    'task_reminders_kind_offset_check',
+    sql`("kind" = 'before' AND "offset_minutes" IS NOT NULL AND "offset_minutes" IN (0, 5, 15, 30, 60, 1440)) OR ("kind" IN ('same_day', 'day_before') AND "offset_minutes" IS NULL)`,
+  ),
+]);
+
+/** Suscripciones Web Push (una por navegador/dispositivo). El endpoint identifica al dispositivo. */
+export const pushSubscriptions = pgTable('push_subscriptions', {
+  id: id(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  endpoint: text('endpoint').notNull().unique(),
+  p256dh: text('p256dh').notNull(),
+  auth: text('auth').notNull(),
+  userAgent: text('user_agent'),
+  createdAt: createdAt(),
+  lastSuccessAt: timestamp('last_success_at', { withTimezone: true }),
+  failureCount: integer('failure_count').notNull().default(0),
+}, (t) => [index('push_subscriptions_user_idx').on(t.userId)]);
+
+/**
+ * Avisos ya mandados (o reclamados para mandar). La unicidad de (usuario, tipo, clave) hace que un aviso salga
+ * a lo sumo una vez aunque el proceso se reinicie. Se purgan a los 30 días.
+ */
+export const notificationDeliveries = pgTable('notification_deliveries', {
+  id: id(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  taskId: uuid('task_id').references(() => tasks.id, { onDelete: 'cascade' }),
+  kind: text('kind', { enum: ['reminder', 'digest', 'assigned', 'test'] }).notNull(),
+  fireKey: text('fire_key').notNull(),
+  sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('notification_deliveries_key_idx').on(t.userId, t.kind, t.fireKey),
+  index('notification_deliveries_sent_idx').on(t.sentAt),
 ]);

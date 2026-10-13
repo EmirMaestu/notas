@@ -10,6 +10,7 @@ cambios. Pensado para una persona y su círculo chico (pareja, socios, equipo de
 - **Agregado rápido:** escribí `Llamar al médico mañana !alta #casa` y se crea la tarea con fecha, prioridad (`!alta`, `!media`, `!baja`) y etiqueta (`#etiqueta`). Entiende `hoy`, `mañana`, `pasado mañana`, días de la semana y fechas.
 - **Subtareas, prioridades, fechas de vencimiento y etiquetas.**
 - **Listas compartidas y asignación:** compartí una lista con otras personas y asigná tareas.
+- **Notificaciones push:** recordatorios por tarea (minutos antes, o el mismo día / el día anterior para tareas sin hora), resumen diario opcional y aviso cuando te asignan una tarea. Funcionan en Chrome, Edge, Firefox y Safari, y en iPhone/iPad (iOS 16.4+) con Notas agregada a la pantalla de inicio.
 - **Conexión con IA:** servidor MCP en `/mcp` con OAuth 2.1 (registro dinámico de clientes, PKCE) y tokens personales (`ntk_…`).
 - **Tema claro y oscuro.** Interfaz en español.
 
@@ -38,6 +39,7 @@ Variables (ver `.env.example`):
 | `APP_URL` | URL pública sin barra final; es el issuer de OAuth y la base del MCP. Obligatoria en producción. |
 | `TRUSTED_PROXY_HOPS` | Cantidad de proxies delante de la app (para obtener la IP real del cliente). |
 | `NOTAS_DISABLE_MAINTENANCE` | `1` = no programar la limpieza diaria. |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Claves para las notificaciones push (`node scripts/generate-vapid.mjs --env`) y contacto (`mailto:` o `https:`). Vacías = sin notificaciones. |
 
 ## Tests
 
@@ -53,7 +55,7 @@ npm run typecheck
 La carpeta [`deploy/`](deploy) trae lo necesario para un VPS con Docker Compose y un reverse proxy:
 
 - `docker-compose.yml`: la app (build standalone) y PostgreSQL 16. La app escucha en `127.0.0.1:3200`.
-- `.env.production.example`: plantilla de `~/notas/.env` en el servidor (`POSTGRES_PASSWORD`, `INVITE_CODE`, `APP_URL`, `TRUSTED_PROXY_HOPS`).
+- `.env.production.example`: plantilla de `~/notas/.env` en el servidor (`POSTGRES_PASSWORD`, `INVITE_CODE`, `APP_URL`, `TRUSTED_PROXY_HOPS` y opcionalmente `VAPID_*`).
 - `notas.caddy`: sitio de Caddy de ejemplo (cambiá `notas.example.com` por tu dominio); HTTPS automático y sin buffer para el SSE del MCP.
 - `deploy.sh`: sube el commit actual por SSH, construye en el servidor, verifica `/api/health` y vuelve a la versión anterior si falla.
 - `backup.sh` y `restore.md`: backups diarios con retención y cómo restaurar.

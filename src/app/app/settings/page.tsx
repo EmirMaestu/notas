@@ -3,17 +3,22 @@ import { cookies } from 'next/headers';
 import { logoutAction } from '@/app/(auth)/actions';
 import { listApiTokens } from '@/core/api-tokens';
 import { DEFAULT_TIMEZONE } from '@/core/dates';
+import { notificationPrefsOf } from '@/core/notification-prefs';
 import { listOAuthConnections } from '@/core/oauth';
+import { countPushSubscriptions } from '@/core/push-subscriptions';
 import { getDb } from '@/db';
 import { AiConnection } from '@/components/ai-connection';
 import { Avatar } from '@/components/avatar';
 import { LogoutButton } from '@/components/logout-button';
 import { MobileHeader } from '@/components/mobile-header';
+import { NotificationPrefsForm } from '@/components/notification-prefs-form';
+import { PushDevice } from '@/components/push-device';
 import { ThemeForm } from '@/components/theme-form';
 import { TimezoneForm } from '@/components/timezone-form';
 import { mcpResourceUrl } from '@/lib/app-url';
 import { requireUser } from '@/lib/auth';
 import { formatAgo, formatShortDate } from '@/lib/format';
+import { vapidPublicKey } from '@/lib/push';
 import { THEME_COOKIE, parseTheme } from '@/lib/theme';
 
 function SectionLabel({ title, help, ai = false }: { title: string; help?: string; ai?: boolean }) {
@@ -31,7 +36,9 @@ function SectionLabel({ title, help, ai = false }: { title: string; help?: strin
 export default async function SettingsPage() {
   const user = await requireUser();
   const db = await getDb();
-  const [tokens, connections] = await Promise.all([listApiTokens(db, user.id), listOAuthConnections(db, user.id)]);
+  const [tokens, connections, devices] = await Promise.all([
+    listApiTokens(db, user.id), listOAuthConnections(db, user.id), countPushSubscriptions(db, user.id),
+  ]);
   // ICU no siempre lista el nombre actual de Buenos Aires; se agregan el default y el valor actual.
   const zones = [...new Set([...Intl.supportedValuesOf('timeZone'), DEFAULT_TIMEZONE, user.timezone])].sort();
   const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
@@ -60,6 +67,15 @@ export default async function SettingsPage() {
 
           <SectionLabel title="Tema" help="Por defecto sigue la configuración del sistema." />
           <ThemeForm current={theme} />
+
+          <SectionLabel
+            title="Notificaciones"
+            help="Recordatorios de tus tareas, resumen del día y avisos cuando te asignan algo."
+          />
+          <div className="flex min-w-0 flex-col gap-3">
+            <PushDevice publicKey={vapidPublicKey()} devices={devices} />
+            <NotificationPrefsForm initial={notificationPrefsOf(user)} />
+          </div>
 
           <SectionLabel
             ai title="Conexión con IA"

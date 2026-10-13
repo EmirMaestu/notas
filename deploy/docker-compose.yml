@@ -50,6 +50,10 @@ services:
       INVITE_CODE: ${INVITE_CODE:-}
       TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
       NOTAS_DISABLE_MAINTENANCE: ${NOTAS_DISABLE_MAINTENANCE:-}
+      # Notificaciones push (opcionales: sin las tres quedan apagadas). Ver deploy/.env.production.example.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
     # Solo el Caddy del host habla con la app. Una sola réplica: los límites de frecuencia están en memoria.
     ports:
       - "127.0.0.1:3200:3000"

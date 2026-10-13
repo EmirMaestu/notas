@@ -70,6 +70,7 @@ export function formatTask(task: TaskWithDetails, lists: ReadonlyMap<string, Lis
     tags: task.tags,
     other_tags: task.otherTags,
     assignee: task.assignee?.email ?? null,
+    reminder: task.reminder,
     subtasks: task.subtasks.map((s) => ({ id: s.id, title: s.title, done: s.done })),
   };
 }

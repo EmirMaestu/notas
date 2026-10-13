@@ -19,7 +19,7 @@ beforeEach(async () => {
 
 const TASK_KEYS = [
   'assignee', 'completed_at', 'deleted_at', 'description', 'due_date', 'due_time', 'id', 'list_folder', 'list_id', 'list_name',
-  'other_tags', 'priority', 'status', 'subtasks', 'tags', 'title',
+  'other_tags', 'priority', 'reminder', 'status', 'subtasks', 'tags', 'title',
 ];
 
 describe('crear y leer tareas', () => {
@@ -33,7 +33,7 @@ describe('crear y leer tareas', () => {
     expect(task).toMatchObject({
       title: 'Pagar luz', description: 'Antes del 15', list_id: list.id, list_name: 'Casa', list_folder: null, due_date: '2026-10-20',
       due_time: '09:30', priority: 5, status: 'pending', completed_at: null, deleted_at: null,
-      tags: ['casa', 'pagos'], other_tags: [], assignee: null,
+      tags: ['casa', 'pagos'], other_tags: [], assignee: null, reminder: null,
     });
     expect(task.subtasks.map((s: { title: string; done: boolean }) => [s.title, s.done]))
       .toEqual([['Buscar factura', false], ['Pagar', false]]);

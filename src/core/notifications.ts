@@ -1,0 +1,325 @@
+import { and, eq, gte, inArray, isNotNull, isNull, lt, lte } from 'drizzle-orm';
+import { notificationDeliveries, pushSubscriptions, taskReminders, tasks, users } from '@/db/schema';
+import type { DB } from '@/db/types';
+import { canAccessList } from './access';
+import { addDays, todayIn } from './dates';
+import { isUuid } from './errors';
+import { listPushSubscriptions, recordPushResult, type PushPayload, type PushResult, type SendPush } from './push-subscriptions';
+import { fromStored, reminderFireAt } from './reminder-options';
+import { listTasks } from './tasks';
+
+/**
+ * Motor de notificaciones. No sabe de `web-push` ni de timers: recibe `send` y `now`. Opera sobre TODOS los
+ * usuarios (lo llama el programador del proceso): nunca exponer `runNotifications` a usuarios ni por MCP.
+ */
+
+export type NotificationKind = 'reminder' | 'digest' | 'assigned' | 'test';
+
+/** Un recordatorio se manda si su instante cayó en (now − 10 min, now]. Más atrasado se saltea. */
+export const REMINDER_WINDOW_MS = 10 * 60_000;
+/** El resumen diario sale si la hora local está en [hora elegida, hora elegida + 10 min). */
+export const DIGEST_WINDOW_MINUTES = 10;
+export const DELIVERY_RETENTION_DAYS = 30;
+/** Un mismo aviso de asignación (tarea + persona) no se repite dentro de esta franja. */
+export const ASSIGNMENT_DEDUPE_MS = 10 * 60_000;
+const MAX_TITLE = 120;
+
+/**
+ * Reclama una entrega: true si es la primera vez para (usuario, tipo, clave). Se llama ANTES de mandar, así un
+ * aviso sale a lo sumo una vez aunque haya reinicios o dos corridas a la vez.
+ */
+export async function claimDelivery(
+  db: DB,
+  d: { userId: string; kind: NotificationKind; fireKey: string; taskId?: string | null; now: Date },
+): Promise<boolean> {
+  const rows = await db
+    .insert(notificationDeliveries)
+    .values({ userId: d.userId, kind: d.kind, fireKey: d.fireKey, taskId: d.taskId ?? null, sentAt: d.now })
+    .onConflictDoNothing()
+    .returning({ id: notificationDeliveries.id });
+  return rows.length > 0;
+}
+
+export interface SendReport {
+  sent: number;
+  failed: number;
+  removed: number;
+}
+
+/** Manda el aviso a todos los dispositivos del usuario a la vez y registra cada resultado (borra los muertos). */
+export async function sendToUser(db: DB, userId: string, payload: PushPayload, send: SendPush, now: Date): Promise<SendReport> {
+  const report: SendReport = { sent: 0, failed: 0, removed: 0 };
+  const subs = await listPushSubscriptions(db, userId);
+  const settled = await Promise.allSettled(subs.map(async (sub) => {
+    let result: PushResult;
+    try {
+      result = await send({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, payload);
+    } catch {
+      result = 'error';
+    }
+    await recordPushResult(db, sub.id, result, now);
+    return result;
+  }));
+  for (const outcome of settled) {
+    // Si falló el registro del resultado, el envío igual pudo haber salido: no se sabe, se cuenta como fallo.
+    const result = outcome.status === 'fulfilled' ? outcome.value : 'error';
+    if (result === 'sent') report.sent += 1;
+    else if (result === 'gone') report.removed += 1;
+    else report.failed += 1;
+  }
+  return report;
+}
+
+function clip(text: string): string {
+  return text.length > MAX_TITLE ? `${text.slice(0, MAX_TITLE - 1)}…` : text;
+}
+
+/** 2030-06-20 → 20/06 */
+function dayMonth(isoDate: string): string {
+  return `${isoDate.slice(8, 10)}/${isoDate.slice(5, 7)}`;
+}
+
+/** Cuerpo del recordatorio: «Hoy a las 15:00», «Mañana a las 09:30», «Vence hoy», «Vence el 20/06»… */
+export function reminderBody(task: { dueDate: string; dueTime: string | null }, today: string): string {
+  const tomorrow = addDays(today, 1);
+  if (task.dueTime) {
+    const day = task.dueDate === today ? 'Hoy' : task.dueDate === tomorrow ? 'Mañana' : `El ${dayMonth(task.dueDate)}`;
+    return `${day} a las ${task.dueTime}`;
+  }
+  if (task.dueDate === today) return 'Vence hoy';
+  if (task.dueDate === tomorrow) return 'Vence mañana';
+  return `Vence el ${dayMonth(task.dueDate)}`;
+}
+
+/** «3 para hoy · 2 vencidas» (se omite la parte en 0). */
+export function digestBody(today: number, overdue: number): string {
+  const parts: string[] = [];
+  if (today > 0) parts.push(`${today} para hoy`);
+  if (overdue > 0) parts.push(`${overdue} ${overdue === 1 ? 'vencida' : 'vencidas'}`);
+  return parts.join(' · ');
+}
+
+/** Cuánto puede tardar una pasada antes de dejar de empezar envíos nuevos (el resto queda para la siguiente). */
+export const TICK_BUDGET_MS = 45_000;
+/** Cuántos avisos se procesan a la vez en una pasada. */
+export const CONCURRENCY = 10;
+
+export interface RunOptions {
+  /** Instante (según `clock`) a partir del cual no se empiezan avisos nuevos. Por defecto, ahora + TICK_BUDGET_MS. */
+  deadline?: number;
+  /** Reloj monótono para el presupuesto de tiempo (inyectable en tests). */
+  clock?: () => number;
+  logger?: Pick<Console, 'error'>;
+  concurrency?: number;
+}
+
+interface ResolvedOptions {
+  deadline: number;
+  clock: () => number;
+  logger: Pick<Console, 'error'>;
+  concurrency: number;
+}
+
+function resolveOptions(options: RunOptions): ResolvedOptions {
+  const clock = options.clock ?? Date.now;
+  return {
+    clock,
+    deadline: options.deadline ?? clock() + TICK_BUDGET_MS,
+    logger: options.logger ?? console,
+    concurrency: options.concurrency ?? CONCURRENCY,
+  };
+}
+
+/**
+ * Procesa `items` de a `concurrency` a la vez. Un ítem que falla se loguea y no frena a los demás. Si se acaba
+ * el presupuesto de tiempo no se empiezan más: los que quedan sin reclamar los toma la próxima pasada (mientras
+ * sigan dentro de su ventana). Devuelve la suma de lo que devolvió `work`.
+ */
+async function processInChunks<T>(items: T[], o: ResolvedOptions, work: (item: T) => Promise<number>): Promise<number> {
+  let total = 0;
+  for (let i = 0; i < items.length; i += o.concurrency) {
+    if (o.clock() >= o.deadline) {
+      o.logger.error(`[notificaciones] se agotó el tiempo de la pasada: quedan ${items.length - i} para la siguiente`);
+      break;
+    }
+    const outcomes = await Promise.allSettled(items.slice(i, i + o.concurrency).map(work));
+    for (const outcome of outcomes) {
+      if (outcome.status === 'fulfilled') total += outcome.value;
+      else o.logger.error('[notificaciones] falló un aviso:', outcome.reason);
+    }
+  }
+  return total;
+}
+
+/** Subconsulta: usuarios con al menos un dispositivo suscripto. */
+function usersWithDevices(db: DB) {
+  return db.selectDistinct({ id: pushSubscriptions.userId }).from(pushSubscriptions);
+}
+
+/** Manda los recordatorios cuyo instante cayó en la ventana. Devuelve cuántos llegaron a algún dispositivo. */
+export async function runReminders(db: DB, now: Date, send: SendPush, options: RunOptions = {}): Promise<number> {
+  const o = resolveOptions(options);
+  // Un recordatorio suena entre el día anterior y el mismo día de la tarea, en la zona del usuario (UTC±14):
+  // alcanza con mirar tareas que vencen entre 2 días antes y 2 días después de hoy en UTC.
+  const utcToday = todayIn('UTC', now);
+  const rows = await db
+    .select({
+      taskId: tasks.id, listId: tasks.listId, title: tasks.title, dueDate: tasks.dueDate, dueTime: tasks.dueTime,
+      userId: taskReminders.userId, kind: taskReminders.kind, offsetMinutes: taskReminders.offsetMinutes,
+      setAt: taskReminders.updatedAt, timezone: users.timezone, allDayTime: users.allDayReminderTime,
+    })
+    .from(taskReminders)
+    .innerJoin(tasks, eq(tasks.id, taskReminders.taskId))
+    .innerJoin(users, eq(users.id, taskReminders.userId))
+    .where(and(
+      eq(tasks.status, 'pending'),
+      isNull(tasks.deletedAt),
+      isNotNull(tasks.dueDate),
+      gte(tasks.dueDate, addDays(utcToday, -2)),
+      lte(tasks.dueDate, addDays(utcToday, 2)),
+      inArray(taskReminders.userId, usersWithDevices(db)),
+    ));
+
+  // Primero los que vencen antes: son los que antes caen fuera de la ventana.
+  const due: { row: (typeof rows)[number]; fireAt: Date }[] = [];
+  for (const r of rows) {
+    try {
+      const option = fromStored(r);
+      const fireAt = option ? reminderFireAt(r, option, r.timezone, r.allDayTime) : null;
+      if (!fireAt) continue;
+      const t = fireAt.getTime();
+      if (t > now.getTime() || t <= now.getTime() - REMINDER_WINDOW_MS || t < r.setAt.getTime()) continue;
+      due.push({ row: r, fireAt });
+    } catch (err) {
+      o.logger.error('[notificaciones] falló un recordatorio:', err);
+    }
+  }
+  due.sort((x, y) => x.fireAt.getTime() - y.fireAt.getTime());
+
+  return processInChunks(due, o, async ({ row: r, fireAt }) => {
+    // La persona puede haber dejado de tener acceso (la sacaron de la lista compartida).
+    if (!(await canAccessList(db, r.userId, r.listId))) return 0;
+    const fireKey = `${r.taskId}:${fireAt.toISOString()}`;
+    if (!(await claimDelivery(db, { userId: r.userId, kind: 'reminder', fireKey, taskId: r.taskId, now }))) return 0;
+    const report = await sendToUser(db, r.userId, {
+      title: clip(r.title),
+      body: reminderBody({ dueDate: r.dueDate!, dueTime: r.dueTime }, todayIn(r.timezone, now)),
+      url: `/app/list/${r.listId}?t=${r.taskId}`,
+      tag: `reminder-${r.taskId}`,
+    }, send, now);
+    return report.sent > 0 ? 1 : 0;
+  });
+}
+
+/** Fecha y minutos del día locales. */
+function localClock(now: Date, timeZone: string): { date: string; minutes: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone, hourCycle: 'h23', hour: '2-digit', minute: '2-digit',
+  }).formatToParts(now);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)!.value);
+  return { date: todayIn(timeZone, now), minutes: get('hour') * 60 + get('minute') };
+}
+
+function toMinutes(time: string): number {
+  return Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+}
+
+/** Resumen diario de Hoy (lo mismo que la vista «Hoy»). Devuelve cuántos llegaron a algún dispositivo. */
+export async function runDigests(db: DB, now: Date, send: SendPush, options: RunOptions = {}): Promise<number> {
+  const o = resolveOptions(options);
+  const rows = await db
+    .select({ id: users.id, timezone: users.timezone, digestTime: users.digestTime })
+    .from(users)
+    .where(and(eq(users.digestEnabled, true), inArray(users.id, usersWithDevices(db))));
+  return processInChunks(rows, o, async (user) => {
+    const clock = localClock(now, user.timezone);
+    const start = toMinutes(user.digestTime);
+    if (clock.minutes < start || clock.minutes >= start + DIGEST_WINDOW_MINUTES) return 0;
+    if (!(await claimDelivery(db, { userId: user.id, kind: 'digest', fireKey: clock.date, now }))) return 0;
+    const pending = await listTasks(db, user.id, { view: 'today', now, limit: 500 });
+    if (pending.length === 0) return 0;
+    const overdue = pending.filter((t) => t.dueDate !== null && t.dueDate < clock.date).length;
+    const report = await sendToUser(db, user.id, {
+      title: 'Tu día en Notas', body: digestBody(pending.length - overdue, overdue), url: '/app/today', tag: 'digest',
+    }, send, now);
+    return report.sent > 0 ? 1 : 0;
+  });
+}
+
+export interface NotificationsReport {
+  reminders: number;
+  digests: number;
+}
+
+/**
+ * Una pasada del programador. Recordatorios y resúmenes son independientes: si uno falla entero (p. ej. una
+ * consulta) el otro igual sale, y el fallo se loguea. Comparten el presupuesto de tiempo.
+ */
+export async function runNotifications(db: DB, now: Date, send: SendPush, options: RunOptions = {}): Promise<NotificationsReport> {
+  const o = resolveOptions(options);
+  const [reminders, digests] = await Promise.allSettled([
+    runReminders(db, now, send, o),
+    runDigests(db, now, send, o),
+  ]);
+  const count = (outcome: PromiseSettledResult<number>, what: string) => {
+    if (outcome.status === 'fulfilled') return outcome.value;
+    o.logger.error(`[notificaciones] falló ${what}:`, outcome.reason);
+    return 0;
+  };
+  return { reminders: count(reminders, 'la pasada de recordatorios'), digests: count(digests, 'la pasada de resúmenes') };
+}
+
+/**
+ * Avisa a la persona asignada a la tarea (pendiente y fuera de la papelera), si no es quien asignó, tiene el aviso prendido y accede a la lista.
+ * El llamador decide si la asignación cambió. Devuelve true si llegó a algún dispositivo.
+ * Anti-spam: a lo sumo un aviso por (tarea, persona) cada 10 minutos (asignar y desasignar en bucle no repite),
+ * y `allow` es el tope por pareja (quien asigna, a quién), que se consulta solo si el aviso es nuevo.
+ */
+export async function notifyAssignment(
+  db: DB, { actorId, taskId }: { actorId: string; taskId: string }, send: SendPush, now: Date,
+  allow: (actorId: string, assigneeId: string) => boolean = () => true,
+): Promise<boolean> {
+  if (!isUuid(taskId)) return false;
+  const [task] = await db
+    .select({
+      id: tasks.id, title: tasks.title, listId: tasks.listId, assigneeId: tasks.assigneeId, deletedAt: tasks.deletedAt,
+      status: tasks.status,
+    })
+    .from(tasks)
+    .where(eq(tasks.id, taskId));
+  if (!task || !task.assigneeId || task.assigneeId === actorId || task.deletedAt || task.status !== 'pending') return false;
+  const [assignee] = await db.select({ notifyAssigned: users.notifyAssigned }).from(users).where(eq(users.id, task.assigneeId));
+  if (!assignee?.notifyAssigned) return false;
+  if (!(await canAccessList(db, task.assigneeId, task.listId))) return false;
+  const [actor] = await db.select({ name: users.name, email: users.email }).from(users).where(eq(users.id, actorId));
+  const who = actor ? actor.name.trim() || actor.email : 'Alguien';
+  const bucket = Math.floor(now.getTime() / ASSIGNMENT_DEDUPE_MS);
+  const fireKey = `${task.id}:${task.assigneeId}:${bucket}`;
+  if (!(await claimDelivery(db, { userId: task.assigneeId, kind: 'assigned', fireKey, taskId: task.id, now }))) return false;
+  if (!allow(actorId, task.assigneeId)) return false;
+  const report = await sendToUser(db, task.assigneeId, {
+    title: 'Te asignaron una tarea',
+    body: `${who} te asignó «${clip(task.title)}»`,
+    url: `/app/assigned?t=${task.id}`,
+    tag: `assigned-${task.id}`,
+  }, send, now);
+  return report.sent > 0;
+}
+
+/** «Enviar prueba» de Configuración: a todos los dispositivos del usuario. */
+export async function sendTestNotification(db: DB, userId: string, send: SendPush, now: Date): Promise<SendReport> {
+  await claimDelivery(db, { userId, kind: 'test', fireKey: `test:${now.toISOString()}`, now });
+  return sendToUser(db, userId, {
+    title: 'Notas', body: 'Las notificaciones de Notas funcionan en este dispositivo.', url: '/app/settings', tag: 'test',
+  }, send, now);
+}
+
+/** Borra el registro de entregas viejas (mantenimiento diario). Devuelve cuántas. */
+export async function purgeOldDeliveries(db: DB, now: Date = new Date(), days = DELIVERY_RETENTION_DAYS): Promise<number> {
+  const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  const deleted = await db
+    .delete(notificationDeliveries)
+    .where(lt(notificationDeliveries.sentAt, cutoff))
+    .returning({ id: notificationDeliveries.id });
+  return deleted.length;
+}

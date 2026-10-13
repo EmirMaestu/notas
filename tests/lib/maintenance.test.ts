@@ -14,7 +14,7 @@ import { createTestClient } from '../helpers/oauth';
 
 const DAY = 24 * 60 * 60 * 1000;
 const T0 = new Date('2026-01-01T00:00:00Z');
-const EMPTY: MaintenanceReport = { sessions: 0, trash: 0, oauthCodes: 0, oauthTokens: 0, oauthClients: 0 };
+const EMPTY: MaintenanceReport = { sessions: 0, trash: 0, oauthCodes: 0, oauthTokens: 0, oauthClients: 0, deliveries: 0 };
 
 describe('runMaintenance', () => {
   it('borra sesiones vencidas, papelera vieja y clientes OAuth huérfanos; lo vigente queda', async () => {
@@ -30,7 +30,7 @@ describe('runMaintenance', () => {
     const orphan = await createTestClient(db, undefined, T0);
 
     expect(await runMaintenance(db, now)).toEqual({
-      sessions: 1, trash: 1, oauthCodes: 0, oauthTokens: 0, oauthClients: 1,
+      sessions: 1, trash: 1, oauthCodes: 0, oauthTokens: 0, oauthClients: 1, deliveries: 0,
     });
     expect(await getSessionUser(db, live.token, now)).not.toBeNull();
     expect((await listTasks(db, user.id, { view: 'trash' })).map((t) => t.title)).toEqual(['reciente']);
@@ -42,8 +42,8 @@ describe('runMaintenance', () => {
 
 describe('formatMaintenanceReport', () => {
   it('resume los conteos en una línea de log', () => {
-    expect(formatMaintenanceReport({ sessions: 1, trash: 2, oauthCodes: 3, oauthTokens: 4, oauthClients: 5 }))
-      .toBe('[mantenimiento] sesiones vencidas: 1, papelera: 2, OAuth: 3 códigos, 4 tokens, 5 clientes');
+    expect(formatMaintenanceReport({ sessions: 1, trash: 2, oauthCodes: 3, oauthTokens: 4, oauthClients: 5, deliveries: 6 }))
+      .toBe('[mantenimiento] sesiones vencidas: 1, papelera: 2, OAuth: 3 códigos, 4 tokens, 5 clientes, avisos: 6');
   });
 });
 
