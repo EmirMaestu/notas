@@ -3,6 +3,8 @@ import { todayIn } from '@/core/dates';
 import { NotFoundError, ValidationError } from '@/core/errors';
 import { createList, deleteList, getInbox, getList, listFolders, listLists, updateList } from '@/core/lists';
 import { addListMember, getListMembers, leaveList, removeListMember } from '@/core/members';
+import type { SendPush } from '@/core/push-subscriptions';
+import { REMINDER_OPTIONS } from '@/core/reminder-options';
 import { createTag, listTags } from '@/core/tags';
 import {
   addSubtask, completeTask, createTask, deleteSubtask, deleteTask, getTask, listTasks, moveTask, restoreTask,
@@ -11,6 +13,8 @@ import {
 import { getUser } from '@/core/users';
 import type { DB } from '@/db/types';
 import { shareLimiter } from '@/lib/limits';
+import { assignmentChanged, notifyAssignmentSafely } from '@/lib/notify';
+import { getPushSender } from '@/lib/push';
 import { formatList, formatMember, formatTag, formatTask, weekdayName, type ListLabel } from './format';
 
 /** Con qué base y en nombre de qué usuario corre una herramienta. */
@@ -19,11 +23,17 @@ export interface ToolContext {
   userId: string;
   /** Nombre visible del cliente MCP ("Claude", el nombre del token…), para `created_via`. */
   client?: string;
+  /** Cómo mandar push (para tests). Sin el campo: el configurado con VAPID_*; null = sin avisos. */
+  sendPush?: SendPush | null;
 }
 
 /** Valor de `created_via` para lo que crea este cliente: 'mcp:<nombre>' (o 'mcp:IA' si no se sabe). */
 function createdViaFor(ctx: ToolContext): string {
   return `mcp:${(ctx.client ?? '').trim().slice(0, 100) || 'IA'}`;
+}
+
+function senderOf(ctx: ToolContext): SendPush | null {
+  return ctx.sendPush !== undefined ? ctx.sendPush : getPushSender();
 }
 
 /** Resultado de una herramienta (compatible con CallToolResult del SDK). */
@@ -181,6 +191,12 @@ const TIME_HELP = 'Hora HH:mm (24 hs) en la zona horaria del usuario; requiere f
 const priority = z.literal([0, 1, 3, 5]).describe('Prioridad: 0 ninguna, 1 baja, 3 media, 5 alta');
 const tagNames = z.array(z.string()).max(30)
   .describe('Nombres de etiquetas, sin "#" ni espacios (las que no existen se crean)');
+const reminder = z.enum(REMINDER_OPTIONS).nullable().describe(
+  'Recordatorio para vos (quien llama; cada persona tiene el suyo): at_time, 5m, 15m, 30m, 1h o 1d antes de la '
+  + 'fecha y hora (requieren due_time); same_day o day_before a la hora de recordatorios sin hora del usuario '
+  + '(09:00 por defecto) el mismo día o el anterior (para tareas sin hora). null lo quita. Llega como notificación '
+  + 'push a los dispositivos donde el usuario activó las notificaciones en Notas.',
+);
 /** Tope de resultados de searchTasks en el core. */
 const SEARCH_CAP = 50;
 const VIEWS = ['inbox', 'today', 'next7', 'assigned', 'completed', 'trash'] as const;
@@ -224,7 +240,8 @@ const taskTools = [
       + 'Las descripciones de más de 200 caracteres vienen recortadas con "…" y description_truncated: true; usá get_task '
       + 'para ver la completa. Fechas YYYY-MM-DD y horas HH:mm en la zona horaria del usuario; completed_at y deleted_at '
       + 'vienen como YYYY-MM-DD HH:mm en esa misma zona. Cada tarea trae list_id, list_name y list_folder (carpeta de su '
-      + 'lista, o null): los nombres de lista pueden repetirse en carpetas distintas, así que filtrá y distinguí por list_id.',
+      + 'lista, o null): los nombres de lista pueden repetirse en carpetas distintas, así que filtrá y distinguí por list_id.'
+      + ' reminder es tu recordatorio en la tarea (o null).',
     input: z.object({
       view: z.enum(VIEWS).optional().describe('Vista inteligente'),
       list_id: idOf('la lista').optional(),
@@ -278,7 +295,8 @@ const taskTools = [
     title: 'Crear tarea',
     description:
       'Crea una tarea. Sin list_id va a la Bandeja. due_date YYYY-MM-DD y due_time HH:mm (24 hs) en la zona horaria '
-      + 'del usuario. Prioridad 0/1/3/5. assignee_email: dueño o miembro de la lista.',
+      + 'del usuario. Prioridad 0/1/3/5. assignee_email: dueño o miembro de la lista.'
+      + ' reminder: recordatorio para vos (si no lo mandás y la tarea tiene hora, se aplica tu recordatorio por defecto).',
     input: z.object({
       title: z.string().describe('Título (máx. 500 caracteres)'),
       description: z.string().optional().describe('Notas de la tarea'),
@@ -289,17 +307,22 @@ const taskTools = [
       tags: tagNames.optional(),
       subtasks: z.array(z.string()).max(100).optional().describe('Títulos de las subtareas (checklist)'),
       assignee_email: z.string().optional().describe('Email de la persona asignada'),
+      reminder: reminder.optional(),
     }).strict(),
     run: async (ctx, args) => {
       const listId = args.list_id ?? (await getInbox(ctx.db, ctx.userId)).id;
       const assigneeId = args.assignee_email !== undefined
         ? await resolveAssignee(ctx, listId, args.assignee_email)
         : undefined;
-      return taskOut(ctx, await createTask(ctx.db, ctx.userId, {
+      const task = await createTask(ctx.db, ctx.userId, {
         title: args.title, description: args.description, listId, dueDate: args.due_date, dueTime: args.due_time,
-        priority: args.priority, tags: args.tags, subtasks: args.subtasks, assigneeId,
+        priority: args.priority, tags: args.tags, subtasks: args.subtasks, assigneeId, reminder: args.reminder,
         createdVia: createdViaFor(ctx),
-      }));
+      });
+      if (task.assigneeId && assignmentChanged(null, task.assigneeId, ctx.userId)) {
+        await notifyAssignmentSafely(ctx.db, ctx.userId, task.id, senderOf(ctx));
+      }
+      return taskOut(ctx, task);
     },
   }),
   defineTool({
@@ -308,7 +331,7 @@ const taskTools = [
     description:
       'Modifica solo los campos que se envían. DESTRUCTIVA: tags REEMPLAZA tus etiquetas de la tarea y subtasks REEMPLAZA '
       + 'todas las subtareas (las que no incluyas, con su id, se borran). due_date/due_time en null los quitan (sin fecha '
-      + 'no hay hora). assignee_email null quita la asignación. Para cambiar de lista usá move_task.',
+      + 'no hay hora). assignee_email null quita la asignación. Para cambiar de lista usá move_task. reminder: tu recordatorio (null lo quita).',
     input: z.object({
       task_id: idOf('la tarea'),
       title: z.string().optional(),
@@ -323,19 +346,26 @@ const taskTools = [
         done: z.boolean().optional(),
       }).strict()).max(100).optional(),
       assignee_email: z.string().nullable().optional().describe('Email de la persona asignada; null la quita'),
+      reminder: reminder.optional(),
     }).strict(),
     destructive: true,
     idempotent: true,
     run: async (ctx, args) => {
       const input: UpdateTaskInput = {
         title: args.title, description: args.description, dueDate: args.due_date, dueTime: args.due_time,
-        priority: args.priority, tags: args.tags, subtasks: args.subtasks,
+        priority: args.priority, tags: args.tags, subtasks: args.subtasks, reminder: args.reminder,
       };
+      let before: string | null = null;
       if (args.assignee_email !== undefined) {
         const current = await getTask(ctx.db, ctx.userId, args.task_id);
+        before = current.assigneeId;
         input.assigneeId = await resolveAssignee(ctx, current.listId, args.assignee_email);
       }
-      return taskOut(ctx, await updateTask(ctx.db, ctx.userId, args.task_id, input));
+      const task = await updateTask(ctx.db, ctx.userId, args.task_id, input);
+      if (args.assignee_email !== undefined && assignmentChanged(before, task.assigneeId, ctx.userId)) {
+        await notifyAssignmentSafely(ctx.db, ctx.userId, task.id, senderOf(ctx));
+      }
+      return taskOut(ctx, task);
     },
   }),
   defineTool({
