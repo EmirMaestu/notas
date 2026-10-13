@@ -40,3 +40,13 @@ Logs: `docker logs --tail 100 notas-app-1`.
 
 - En Windows: correr `npx vitest` / `npm run e2e` desde PowerShell (en Git Bash falla esbuild); `deploy/deploy.sh` desde Git Bash.
 - El lockfile debe poder instalarse en Linux (`npm ci` en Docker). Si se agregan dependencias desde Windows, verificarlo antes de desplegar.
+
+## Flujo de cambios (PRs obligatorios)
+
+`master` está protegida en GitHub: no acepta push directo ni force push, ni siquiera del administrador. Todo cambio entra por Pull Request (0 aprobaciones requeridas, las conversaciones deben quedar resueltas) y la rama se borra sola al mergear.
+
+1. `git checkout -b <tipo>/<tema>` (p. ej. `feat/recordatorios`, `fix/fecha-detalle`, `docs/…`).
+2. Commits, tests verdes (`npx vitest run`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, `npm run e2e`).
+3. `git push -u origin <rama>` y `gh pr create --fill` (o con título y cuerpo).
+4. Revisar el PR y mergearlo: `gh pr merge --merge --delete-branch`.
+5. Volver a `master` actualizada (`git checkout master && git pull`) y recién ahí desplegar: `bash deploy/deploy.sh` (exige `master` limpia).
