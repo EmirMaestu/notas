@@ -1,11 +1,12 @@
 'use client';
 
-import { ArrowLeft, Calendar, Clock, Flag, List as ListIcon, RotateCcw, Sparkles, Trash2, User, X } from 'lucide-react';
+import { ArrowLeft, Bell, Calendar, Clock, Flag, List as ListIcon, RotateCcw, Sparkles, Trash2, User, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from 'react';
 import { isValidIsoDate, isValidTime } from '@/core/dates';
 import type { Folder, ListWithRole } from '@/core/lists';
 import type { ListMember } from '@/core/members';
+import { reminderLabel, reminderOptionsFor, type ReminderOption } from '@/core/reminder-options';
 import type { TaskWithDetails, UpdateTaskInput } from '@/core/tasks';
 import type { ActionResult } from '@/lib/action-result';
 import { groupListsByFolder, listDisplayName } from '@/lib/list-groups';
@@ -13,6 +14,7 @@ import { createdViaClient, formatAgo, formatDetailDate, formatShortDate, localTi
 import { useSyncedField } from '@/lib/synced-field';
 import { moveTaskAction, restoreTaskAction, toggleTaskAction, updateTaskAction } from '@/app/app/actions';
 import { Avatar } from './avatar';
+import { useShell } from './app-shell';
 import { PriorityCheckbox } from './priority-checkbox';
 import { PrioritySelect } from './priority-select';
 import { SelectPill } from './select-pill';
@@ -70,6 +72,7 @@ export function TaskDetail({
   const inTrash = task.deletedAt !== null;
   const pathname = usePathname();
   const { closeDetail, trash, hide, consumeEditTitle } = useWorkspace();
+  const { user } = useShell();
   const { value: title, setValue: setTitle, baseline: titleBase } = useSyncedField(task.title);
   const { value: description, setValue: setDescription, baseline: descriptionBase } = useSyncedField(task.description);
   const [date, setDate] = useState(task.dueDate ?? '');
@@ -77,6 +80,7 @@ export function TaskDetail({
   const [priority, setPriority] = useState(task.priority);
   const [listId, setListId] = useState(task.listId);
   const [assigneeId, setAssigneeId] = useState(task.assigneeId ?? '');
+  const [reminder, setReminder] = useState<ReminderOption | ''>(task.reminder ?? '');
   const [error, setError] = useState<string | null>(null);
   const [saving, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -90,6 +94,7 @@ export function TaskDetail({
   useEffect(() => setPriority(task.priority), [task.priority]);
   useEffect(() => setListId(task.listId), [task.listId]);
   useEffect(() => setAssigneeId(task.assigneeId ?? ''), [task.assigneeId]);
+  useEffect(() => setReminder(task.reminder ?? ''), [task.reminder]);
 
   // Atajo E desde la fila: el detalle abre con el título listo para editar.
   useEffect(() => {
@@ -173,6 +178,11 @@ export function TaskDetail({
     );
   }
 
+  function changeReminder(next: string) {
+    setReminder(next as ReminderOption | '');
+    save({ reminder: next === '' ? null : (next as ReminderOption) }, () => setReminder(task.reminder ?? ''));
+  }
+
   function assign(next: string) {
     setAssigneeId(next);
     run(
@@ -239,6 +249,11 @@ export function TaskDetail({
     );
   }
 
+  // Las opciones dependen de si la tarea tiene hora; si quedó guardada una que ya no corresponde
+  // (p. ej. se le sacó la hora), se sigue mostrando para no perderla en silencio.
+  const baseChoices = reminderOptionsFor(task.dueTime !== null);
+  const reminderChoices: readonly ReminderOption[] = reminder && !baseChoices.includes(reminder)
+    ? [...baseChoices, reminder] : baseChoices;
   const done = task.status === 'completed';
   const shownDate = isValidIsoDate(date) ? date : task.dueDate;
   const dateTone = !shownDate ? 'font-medium text-muted'
@@ -288,6 +303,18 @@ export function TaskDetail({
                 />
               </label>
             )}
+          </dd>
+
+          <dt className={PROP_LABEL}><Bell size={15} aria-hidden="true" />Recordatorio</dt>
+          <dd className="flex min-h-9 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <SelectPill
+              label="Recordatorio" value={reminder} onChange={changeReminder} disabled={!task.dueDate}
+              leadingInset="flag" leading={<Bell size={13} className={reminder ? 'text-accent' : 'text-muted'} />}
+            >
+              <option value="">Sin recordatorio</option>
+              {reminderChoices.map((o) => <option key={o} value={o}>{reminderLabel(o, user.allDayReminderTime)}</option>)}
+            </SelectPill>
+            {!task.dueDate && <span className="text-meta text-muted">Poné una fecha para usar recordatorios</span>}
           </dd>
 
           <dt className={PROP_LABEL}><Flag size={15} aria-hidden="true" />Prioridad</dt>
