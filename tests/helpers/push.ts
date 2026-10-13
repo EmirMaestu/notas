@@ -3,7 +3,7 @@ import type { PushPayload, PushResult, SendPush } from '@/core/push-subscription
 /** Datos de una suscripción como los manda el navegador (`PushSubscription.toJSON()` + user agent). */
 export function subscriptionInput(n = 1, overrides: Record<string, unknown> = {}) {
   return {
-    endpoint: `https://push.example.com/send/${n}`,
+    endpoint: `https://fcm.googleapis.com/fcm/send/${n}`,
     keys: { p256dh: `BClavePublica${n}_-`, auth: `auth${n}` },
     userAgent: 'Vitest',
     ...overrides,

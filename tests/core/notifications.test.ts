@@ -56,7 +56,7 @@ describe('recordatorios', () => {
     const { send, calls } = fakeSender();
     expect(await runReminders(db, FIRE, send)).toBe(1);
     expect(calls).toEqual([{
-      endpoint: 'https://push.example.com/send/1',
+      endpoint: 'https://fcm.googleapis.com/fcm/send/1',
       payload: { title: 'Dentista', body: 'Hoy a las 15:00', url: `/app/list/${task.listId}?t=${task.id}`, tag: `reminder-${task.id}` },
     }]);
     // Ni el mismo tick repetido (otro proceso, reinicio) ni el siguiente lo vuelven a mandar.
@@ -95,7 +95,7 @@ describe('recordatorios', () => {
     await removeListMember(db, owner.id, shared.id, member.id);
     const { send, calls } = fakeSender();
     expect(await runReminders(db, FIRE, send)).toBe(1);
-    expect(calls.map((c) => c.endpoint)).toEqual(['https://push.example.com/send/1']);
+    expect(calls.map((c) => c.endpoint)).toEqual(['https://fcm.googleapis.com/fcm/send/1']);
   });
 
   it('sin dispositivos no hace nada (ni registra la entrega)', async () => {
@@ -134,7 +134,7 @@ describe('recordatorios', () => {
     const user = await userWithDevice('emir@example.com', 1);
     await savePushSubscription(db, user.id, subscriptionInput(2));
     await createTask(db, user.id, { title: 'Dentista', ...DUE, reminder: '15m' });
-    const { send, calls } = fakeSender({ 'https://push.example.com/send/1': 'gone' });
+    const { send, calls } = fakeSender({ 'https://fcm.googleapis.com/fcm/send/1': 'gone' });
     expect(await runReminders(db, FIRE, send)).toBe(1);
     expect(calls).toHaveLength(2);
     expect(await countPushSubscriptions(db, user.id)).toBe(1);
@@ -152,7 +152,7 @@ describe('recordatorios', () => {
       return 'ok' as const;
     };
     expect(await runReminders(db, FIRE, send)).toBe(1);
-    expect(sent).toEqual(['https://push.example.com/send/2']);
+    expect(sent).toEqual(['https://fcm.googleapis.com/fcm/send/2']);
   });
 });
 
@@ -214,7 +214,7 @@ describe('aviso de asignación', () => {
     const { send, calls } = fakeSender();
     expect(await notifyAssignment(db, { actorId: owner.id, taskId: task.id }, send, FIRE)).toBe(true);
     expect(calls).toEqual([{
-      endpoint: 'https://push.example.com/send/2',
+      endpoint: 'https://fcm.googleapis.com/fcm/send/2',
       payload: { title: 'Te asignaron una tarea', body: 'Emir te asignó «Comprar pan»', url: `/app/assigned?t=${task.id}`, tag: `assigned-${task.id}` },
     }]);
     // Asignarse uno mismo no avisa.

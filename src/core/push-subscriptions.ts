@@ -12,6 +12,17 @@ const MAX_AUTH = 100;
 const MAX_USER_AGENT = 300;
 const B64URL = /^[A-Za-z0-9_-]+={0,2}$/;
 
+/** Servicios de push de los navegadores. El servidor hace un POST al endpoint: solo a estos hosts (anti-SSRF). */
+const PUSH_HOSTS = new Set(['fcm.googleapis.com', 'web.push.apple.com']);
+const PUSH_HOST_SUFFIXES = ['.push.services.mozilla.com', '.notify.windows.com', '.push.apple.com'];
+const HOST_MSG = 'El endpoint no es de un servicio de notificaciones conocido';
+
+function isPushServiceUrl(url: URL): boolean {
+  if (url.username || url.password || url.port !== '') return false;
+  const host = url.hostname.toLowerCase();
+  return PUSH_HOSTS.has(host) || PUSH_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix));
+}
+
 export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
 
 /** A dónde se manda (lo mínimo que necesita `web-push`). */
@@ -54,6 +65,7 @@ export function checkPushSubscription(input: unknown): PushTarget & { userAgent:
     throw new ValidationError('Suscripción inválida');
   }
   if (url.protocol !== 'https:') throw new ValidationError('La suscripción tiene que usar https');
+  if (!isPushServiceUrl(url)) throw new ValidationError(HOST_MSG);
   if (typeof i.keys !== 'object' || i.keys === null) throw new ValidationError(KEYS_MSG);
   const keys = i.keys as { p256dh?: unknown; auth?: unknown };
   return {

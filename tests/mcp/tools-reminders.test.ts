@@ -56,7 +56,7 @@ describe('aviso de asignación por MCP', () => {
       title: 'Comprar pan', list_id: fixture.shared.id, assignee_email: fixture.member.email,
     });
     expect(sender.calls).toEqual([{
-      endpoint: 'https://push.example.com/send/2',
+      endpoint: 'https://fcm.googleapis.com/fcm/send/2',
       payload: { title: 'Te asignaron una tarea', body: 'Emir te asignó «Comprar pan»', url: `/app/assigned?t=${task.id}`, tag: `assigned-${task.id}` },
     }]);
   });
