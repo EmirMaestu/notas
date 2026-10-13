@@ -7,7 +7,7 @@ import { NotFoundError, ValidationError, isForeignKeyViolation, isUniqueViolatio
 import { getInbox, getList } from './lists';
 import { PRIORITIES, type Priority } from './priority';
 import { checkReminderFits, parseReminderOption, type ReminderOption } from './reminder-options';
-import { applyDefaultReminder, remindersFor, writeReminder } from './reminders';
+import { applyDefaultReminder, remindersFor, touchReminders, writeReminder } from './reminders';
 import { ensureTags, normalizeTagName } from './tags';
 import { getUser } from './users';
 
@@ -360,7 +360,11 @@ export async function updateTask(
     const finalTime = patch.dueTime !== undefined ? patch.dueTime : current.dueTime;
     if (reminder !== undefined) checkReminderFits(reminder, finalDate, finalTime);
     await tx.update(tasks).set({ ...patch, updatedAt: new Date() }).where(eq(tasks.id, current.id));
+    // Otra fecha u hora: los recordatorios cuentan como puestos ahora (no avisan un instante que ya pasó).
+    if (finalDate !== current.dueDate || finalTime !== current.dueTime) await touchReminders(tx, current.id);
     if (reminder !== undefined) await writeReminder(tx, userId, current.id, reminder);
+    // Sin marca de "no quiero recordatorio" en la base (el CHECK de task_reminders no admite kind 'none'), si la
+    // persona lo quitó a propósito y luego se saca y se vuelve a poner la hora, el por defecto vuelve a aplicarse.
     else if (current.dueTime === null && finalTime !== null) await applyDefaultReminder(tx, userId, current.id);
     if (subtaskItems) await replaceSubtasks(tx, current.id, subtaskItems);
     if (tagNames) await replaceTags(tx, userId, current.id, tagNames);

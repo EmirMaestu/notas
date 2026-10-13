@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { addDays, todayIn } from '@/core/dates';
 import { removeListMember } from '@/core/members';
 import { updateNotificationPrefs } from '@/core/notification-prefs';
 import {
@@ -457,5 +458,31 @@ describe('acceso a la lista al sonar', () => {
     const { send, calls } = fakeSender();
     expect(await runReminders(db, FIRE, send)).toBe(0);
     expect(calls).toEqual([]);
+  });
+});
+
+describe('cambio de fecha u hora de la tarea', () => {
+  it('si el instante nuevo ya pasó al guardar, el recordatorio no suena atrasado', async () => {
+    const user = await userWithDevice();
+    const yesterday = addDays(todayIn('UTC', new Date()), -1);
+    const task = await createTask(db, user.id, { title: 'Dentista', dueDate: '2030-06-10', dueTime: '12:00', reminder: '15m' });
+    // El recordatorio quedó "puesto" hace mucho (p. ej. se creó hace meses).
+    await db.update(taskReminders).set({ updatedAt: new Date('2000-01-01T00:00:00Z') }).where(eq(taskReminders.taskId, task.id));
+    await updateTask(db, user.id, task.id, { dueDate: yesterday });
+    // 12:00 en Buenos Aires (UTC−3) menos 15 minutos, ayer; un minuto después.
+    const justAfter = new Date(new Date(`${yesterday}T14:45:00Z`).getTime() + MIN);
+    const { send, calls } = fakeSender();
+    expect(await runReminders(db, justAfter, send)).toBe(0);
+    expect(calls).toEqual([]);
+  });
+
+  it('cambiar otra cosa (el título) no reinicia el recordatorio', async () => {
+    const user = await userWithDevice();
+    const task = await createTask(db, user.id, { title: 'Dentista', ...DUE, reminder: '15m' });
+    const old = new Date('2000-01-01T00:00:00Z');
+    await db.update(taskReminders).set({ updatedAt: old }).where(eq(taskReminders.taskId, task.id));
+    await updateTask(db, user.id, task.id, { title: 'Dentista (control)' });
+    const [row] = await db.select().from(taskReminders).where(eq(taskReminders.taskId, task.id));
+    expect(row.updatedAt).toEqual(old);
   });
 });

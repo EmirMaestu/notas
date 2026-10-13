@@ -46,3 +46,11 @@ export async function applyDefaultReminder(db: DB, userId: string, taskId: strin
   const { kind, offsetMinutes } = toStored(option);
   await db.insert(taskReminders).values({ taskId, userId, kind, offsetMinutes, updatedAt: now }).onConflictDoNothing();
 }
+
+/**
+ * Marca como "recién puestos" los recordatorios de todas las personas en la tarea. Se llama cuando cambia su fecha
+ * u hora: si el instante nuevo ya pasó, no se avisa tarde (un recordatorio no suena antes de su `updated_at`).
+ */
+export async function touchReminders(db: DB, taskId: string, now: Date = new Date()): Promise<void> {
+  await db.update(taskReminders).set({ updatedAt: now }).where(eq(taskReminders.taskId, taskId));
+}
