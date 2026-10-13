@@ -52,10 +52,10 @@ export async function sendToUser(db: DB, userId: string, payload: PushPayload, s
     try {
       result = await send({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, payload);
     } catch {
-      result = 'failed';
+      result = 'error';
     }
     await recordPushResult(db, sub.id, result, now);
-    if (result === 'ok') report.sent += 1;
+    if (result === 'sent') report.sent += 1;
     else if (result === 'gone') report.removed += 1;
     else report.failed += 1;
   }

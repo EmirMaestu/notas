@@ -40,8 +40,15 @@ export interface PushPayload {
   tag: string;
 }
 
-/** 'gone' = el servicio respondió 404/410: la suscripción ya no existe. */
-export type PushResult = 'ok' | 'gone' | 'failed';
+/**
+ * Cómo salió un envío:
+ * - 'sent': llegó al servicio de push.
+ * - 'gone': el servicio respondió 404/410, la suscripción ya no existe (se borra).
+ * - 'failed': el servicio rechazó el envío con otro 4xx (menos 429): es culpa de la suscripción, cuenta para borrarla.
+ * - 'retry': 429 o 5xx, problema pasajero del servicio: no cuenta.
+ * - 'error': sin respuesta HTTP (red, configuración): no cuenta.
+ */
+export type PushResult = 'sent' | 'gone' | 'failed' | 'retry' | 'error';
 export type SendPush = (target: PushTarget, payload: PushPayload) => Promise<PushResult>;
 
 const KEYS_MSG = 'Claves de la suscripción inválidas';
@@ -132,16 +139,17 @@ export async function countPushSubscriptions(db: DB, userId: string): Promise<nu
   return Number(row.n);
 }
 
-/** Registra cómo salió un envío: éxito, suscripción muerta (se borra) o fallo (se cuenta). */
+/** Registra cómo salió un envío: éxito, suscripción muerta (se borra) o rechazo (se cuenta). 'retry' y 'error' no cuentan. */
 export async function recordPushResult(db: DB, subscriptionId: string, result: PushResult, now: Date = new Date()): Promise<void> {
   if (result === 'gone') {
     await db.delete(pushSubscriptions).where(eq(pushSubscriptions.id, subscriptionId));
     return;
   }
-  if (result === 'ok') {
+  if (result === 'sent') {
     await db.update(pushSubscriptions).set({ lastSuccessAt: now, failureCount: 0 }).where(eq(pushSubscriptions.id, subscriptionId));
     return;
   }
+  if (result !== 'failed') return;
   const [row] = await db
     .update(pushSubscriptions)
     .set({ failureCount: sql`${pushSubscriptions.failureCount} + 1` })

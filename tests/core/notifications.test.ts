@@ -149,7 +149,7 @@ describe('recordatorios', () => {
     const send = async (target: { endpoint: string }) => {
       if (target.endpoint.endsWith('/1')) throw new Error('boom');
       sent.push(target.endpoint);
-      return 'ok' as const;
+      return 'sent' as const;
     };
     expect(await runReminders(db, FIRE, send)).toBe(1);
     expect(sent).toEqual(['https://fcm.googleapis.com/fcm/send/2']);

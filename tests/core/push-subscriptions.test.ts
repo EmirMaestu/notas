@@ -117,7 +117,7 @@ describe('resultado de un envío', () => {
     const sub = await savePushSubscription(db, user.id, subscriptionInput(1));
     const now = new Date('2030-01-01T10:00:00Z');
     await recordPushResult(db, sub.id, 'failed', now);
-    await recordPushResult(db, sub.id, 'ok', now);
+    await recordPushResult(db, sub.id, 'sent', now);
     expect((await listPushSubscriptions(db, user.id))[0]).toMatchObject({ failureCount: 0, lastSuccessAt: now });
     for (let i = 0; i < MAX_PUSH_FAILURES - 1; i++) await recordPushResult(db, sub.id, 'failed', now);
     expect((await listPushSubscriptions(db, user.id))[0].failureCount).toBe(MAX_PUSH_FAILURES - 1);
@@ -127,5 +127,17 @@ describe('resultado de un envío', () => {
     const other = await savePushSubscription(db, user.id, subscriptionInput(2));
     await recordPushResult(db, other.id, 'gone', now);
     expect(await countPushSubscriptions(db, user.id)).toBe(0);
+  });
+
+  it('retry y error (caída del servicio, red o configuración) no cuentan para borrar la suscripción', async () => {
+    const user = await createTestUser(db);
+    const sub = await savePushSubscription(db, user.id, subscriptionInput(1));
+    const now = new Date('2030-01-01T10:00:00Z');
+    for (let i = 0; i < MAX_PUSH_FAILURES * 2; i++) {
+      await recordPushResult(db, sub.id, i % 2 === 0 ? 'retry' : 'error', now);
+    }
+    expect((await listPushSubscriptions(db, user.id))[0].failureCount).toBe(0);
+    await recordPushResult(db, sub.id, 'failed', now);
+    expect((await listPushSubscriptions(db, user.id))[0].failureCount).toBe(1);
   });
 });

@@ -9,7 +9,7 @@ const NONE: NotificationsReport = { reminders: 0, digests: 0 };
 
 describe('scheduleNotifications', () => {
   const fakeDb = {} as DB;
-  const send: SendPush = async () => 'ok';
+  const send: SendPush = async () => 'sent';
 
   beforeEach(() => {
     vi.useFakeTimers();

@@ -10,12 +10,12 @@ export function subscriptionInput(n = 1, overrides: Record<string, unknown> = {}
   };
 }
 
-/** `send` falso: registra cada envío y responde según el endpoint ('ok' si no se indica). */
+/** `send` falso: registra cada envío y responde según el endpoint ('sent' si no se indica). */
 export function fakeSender(results: Record<string, PushResult> = {}) {
   const calls: { endpoint: string; payload: PushPayload }[] = [];
   const send: SendPush = async (target, payload) => {
     calls.push({ endpoint: target.endpoint, payload });
-    return results[target.endpoint] ?? 'ok';
+    return results[target.endpoint] ?? 'sent';
   };
   return { send, calls };
 }
