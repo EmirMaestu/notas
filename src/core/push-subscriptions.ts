@@ -122,6 +122,17 @@ export async function deletePushSubscription(db: DB, userId: string, endpoint: u
   return deleted.length > 0;
 }
 
+/** ¿Este endpoint está registrado para este usuario? (el navegador puede conservar una suscripción de otra cuenta) */
+export async function hasPushSubscription(db: DB, userId: string, endpoint: unknown): Promise<boolean> {
+  if (typeof endpoint !== 'string') return false;
+  const rows = await db
+    .select({ id: pushSubscriptions.id })
+    .from(pushSubscriptions)
+    .where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.endpoint, endpoint)))
+    .limit(1);
+  return rows.length > 0;
+}
+
 /** Las más nuevas primero. */
 export function listPushSubscriptions(db: DB, userId: string): Promise<PushSubscriptionRow[]> {
   return db

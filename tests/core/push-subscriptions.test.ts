@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { ValidationError } from '@/core/errors';
 import {
   MAX_PUSH_FAILURES, MAX_SUBSCRIPTIONS_PER_USER, checkPushSubscription, countPushSubscriptions, deletePushSubscription,
-  listPushSubscriptions, recordPushResult, savePushSubscription,
+  hasPushSubscription, listPushSubscriptions, recordPushResult, savePushSubscription,
 } from '@/core/push-subscriptions';
 import type { DB } from '@/db/types';
 import { createTestDb, createTestUser } from '../helpers/db';
@@ -139,5 +139,22 @@ describe('resultado de un envío', () => {
     expect((await listPushSubscriptions(db, user.id))[0].failureCount).toBe(0);
     await recordPushResult(db, sub.id, 'failed', now);
     expect((await listPushSubscriptions(db, user.id))[0].failureCount).toBe(1);
+  });
+});
+
+describe('hasPushSubscription', () => {
+  it('solo es verdadero para el dueño del endpoint', async () => {
+    const a = await createTestUser(db, 'a@example.com');
+    const b = await createTestUser(db, 'b@example.com');
+    const { endpoint } = subscriptionInput(1);
+    await savePushSubscription(db, a.id, subscriptionInput(1));
+    expect(await hasPushSubscription(db, a.id, endpoint)).toBe(true);
+    expect(await hasPushSubscription(db, b.id, endpoint)).toBe(false);
+    expect(await hasPushSubscription(db, a.id, subscriptionInput(2).endpoint)).toBe(false);
+    expect(await hasPushSubscription(db, a.id, 5)).toBe(false);
+    // Si otra cuenta registra el mismo navegador, la suscripción cambia de dueño.
+    await savePushSubscription(db, b.id, subscriptionInput(1));
+    expect(await hasPushSubscription(db, a.id, endpoint)).toBe(false);
+    expect(await hasPushSubscription(db, b.id, endpoint)).toBe(true);
   });
 });

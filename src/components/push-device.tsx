@@ -2,7 +2,9 @@
 
 import { Bell, BellOff, BellRing, Send } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
-import { deletePushSubscriptionAction, savePushSubscriptionAction, sendTestNotificationAction } from '@/app/app/actions';
+import {
+  checkPushSubscriptionAction, deletePushSubscriptionAction, savePushSubscriptionAction, sendTestNotificationAction,
+} from '@/app/app/actions';
 import { btn } from './ui';
 
 type Support = 'checking' | 'unsupported' | 'ios-install' | 'denied' | 'ready';
@@ -21,6 +23,12 @@ function sameKey(a: ArrayBuffer | null, b: ArrayBuffer): boolean {
   const x = new Uint8Array(a);
   const y = new Uint8Array(b);
   return x.every((v, i) => v === y[i]);
+}
+
+/** ¿El servidor tiene este endpoint registrado para la cuenta actual? Ante un error, se asume que no. */
+async function isMine(endpoint: string): Promise<boolean> {
+  const result = await checkPushSubscriptionAction(endpoint);
+  return result.ok && result.data;
 }
 
 function isIos(): boolean {
@@ -55,7 +63,10 @@ export function PushDevice({ publicKey, devices: initialDevices }: { publicKey: 
       const registration = await navigator.serviceWorker.getRegistration('/');
       const subscription = registration ? await registration.pushManager.getSubscription() : null;
       if (cancelled) return;
-      setSubscribed(subscription !== null);
+      // La suscripción del navegador puede ser de otra cuenta (dispositivo compartido): solo cuenta si es de esta.
+      const owned = subscription !== null && await isMine(subscription.endpoint);
+      if (cancelled) return;
+      setSubscribed(owned);
       setSupport(Notification.permission === 'denied' ? 'denied' : 'ready');
     })().catch(() => {
       if (!cancelled) setSupport('unsupported');
@@ -81,8 +92,9 @@ export function PushDevice({ publicKey, devices: initialDevices }: { publicKey: 
         await navigator.serviceWorker.ready;
         const key = base64UrlToBuffer(publicKey);
         let subscription = await registration.pushManager.getSubscription();
-        // Una suscripción hecha con otras claves (si se regeneraron en el servidor) no sirve: se rehace.
-        if (subscription && !sameKey(subscription.options.applicationServerKey, key)) {
+        // Una suscripción hecha con otras claves (si se regeneraron en el servidor) o que dejó otra cuenta en este
+        // navegador no sirve: se da de baja acá (sin tocar la de la otra cuenta en el servidor) y se rehace.
+        if (subscription && (!sameKey(subscription.options.applicationServerKey, key) || !(await isMine(subscription.endpoint)))) {
           await subscription.unsubscribe();
           subscription = null;
         }

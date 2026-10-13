@@ -10,7 +10,7 @@ import { addListMember, getListMembers, leaveList, removeListMember } from '@/co
 import { updateNotificationPrefs, type NotificationPrefs } from '@/core/notification-prefs';
 import { sendTestNotification } from '@/core/notifications';
 import { revokeOAuthConnection } from '@/core/oauth';
-import { countPushSubscriptions, deletePushSubscription, savePushSubscription } from '@/core/push-subscriptions';
+import { countPushSubscriptions, deletePushSubscription, hasPushSubscription, savePushSubscription } from '@/core/push-subscriptions';
 import { parseQuickAdd } from '@/core/quick-add';
 import {
   addSubtask, completeTask, createTask, deleteSubtask, deleteTask, emptyTrash, getTask, moveTask, restoreTask, uncompleteTask,
@@ -222,6 +222,14 @@ export async function deletePushSubscriptionAction(endpoint: string) {
   return act(async (db, user) => {
     await deletePushSubscription(db, user.id, endpoint);
     return { devices: await countPushSubscriptions(db, user.id) };
+  });
+}
+
+/** ¿La suscripción de este navegador es de la cuenta actual? (otra cuenta pudo dejarla en un dispositivo compartido) */
+export async function checkPushSubscriptionAction(endpoint: string) {
+  return runAction(async () => {
+    const user = await requireUser();
+    return hasPushSubscription(await getDb(), user.id, endpoint);
   });
 }
 
