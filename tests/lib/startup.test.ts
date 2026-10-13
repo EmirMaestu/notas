@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DB } from '@/db/types';
 import type { Env } from '@/lib/maintenance';
-import { MAINTENANCE_FLAG, startServer } from '@/lib/startup';
+import type { SendPush } from '@/core/push-subscriptions';
+import { MAINTENANCE_FLAG, NOTIFICATIONS_FLAG, startServer } from '@/lib/startup';
 
 function deps(env: Env, getDb: () => Promise<DB> = vi.fn(async () => ({}) as DB)) {
   return {
@@ -66,5 +67,47 @@ describe('startServer', () => {
     await startServer(desactivado);
     expect(desactivado.getDb).toHaveBeenCalledTimes(1);
     expect(desactivado.schedule).not.toHaveBeenCalled();
+  });
+});
+
+describe('notificaciones al arrancar', () => {
+  const g = globalThis as Record<string, unknown>;
+  beforeEach(() => {
+    delete g[MAINTENANCE_FLAG];
+    delete g[NOTIFICATIONS_FLAG];
+  });
+
+  function withPush(env: Env, pushSender: SendPush | null) {
+    return { ...deps(env), pushSender, scheduleNotifications: vi.fn(() => () => {}) };
+  }
+
+  it('con claves VAPID programa el envío una sola vez por proceso', async () => {
+    const send = vi.fn<SendPush>();
+    const a = withPush({ NODE_ENV: 'production' }, send);
+    await startServer(a);
+    expect(a.scheduleNotifications).toHaveBeenCalledWith({ getDb: a.getDb, send, logger: a.logger });
+    expect(a.logger.log).toHaveBeenCalledWith('[notas] notificaciones push activas');
+    const b = withPush({ NODE_ENV: 'production' }, send);
+    await startServer(b);
+    expect(b.scheduleNotifications).not.toHaveBeenCalled();
+  });
+
+  it('sin claves no programa nada y lo dice en el log', async () => {
+    const d = withPush({ NODE_ENV: 'production' }, null);
+    await startServer(d);
+    expect(d.scheduleNotifications).not.toHaveBeenCalled();
+    expect(d.logger.log).toHaveBeenCalledWith(
+      '[notas] notificaciones push desactivadas (faltan VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY o VAPID_SUBJECT)',
+    );
+  });
+
+  it('en tests o con NOTAS_DISABLE_MAINTENANCE=1 tampoco', async () => {
+    const send = vi.fn<SendPush>();
+    const enTests = withPush({ NODE_ENV: 'test' }, send);
+    await startServer(enTests);
+    const desactivado = withPush({ NODE_ENV: 'production', NOTAS_DISABLE_MAINTENANCE: '1' }, send);
+    await startServer(desactivado);
+    expect(enTests.scheduleNotifications).not.toHaveBeenCalled();
+    expect(desactivado.scheduleNotifications).not.toHaveBeenCalled();
   });
 });
