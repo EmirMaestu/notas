@@ -3,7 +3,7 @@
 import {
   CalendarDays, CircleCheck, Hash, Inbox, List as ListIcon, Sun, Trash2, UserCheck, Users,
 } from 'lucide-react';
-import { useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useState, useTransition } from 'react';
 import type { Folder, ListWithRole } from '@/core/lists';
 import type { ListMember } from '@/core/members';
 import type { TaskWithDetails } from '@/core/tasks';
@@ -53,6 +53,11 @@ export function TaskWorkspace({
   const [listDialog, setListDialog] = useState(false);
   const [confirmEmpty, setConfirmEmpty] = useState(false);
   const [emptying, startEmptying] = useTransition();
+  // Detalle a pantalla completa (escritorio). Al cerrar el detalle vuelve al tamaño normal.
+  const [expanded, setExpanded] = useState(false);
+  const selectedId = selected?.id;
+  useEffect(() => { if (!selectedId) setExpanded(false); }, [selectedId]);
+  const toggleExpanded = useCallback(() => setExpanded((v) => !v), []);
   const inTrash = context.view === 'trash';
   // En "Asignadas a mí" una tarea nueva no quedaría asignada y no se vería: no se ofrece agregar.
   const canAdd = context.view !== 'completed' && context.view !== 'assigned' && !inTrash;
@@ -176,7 +181,10 @@ export function TaskWorkspace({
   return (
     <WorkspaceProvider tasks={tasks} selectedId={selected?.id}>
       <div className="flex h-full">
-        <section aria-label={title} className={`min-w-0 flex-1 flex-col ${selected ? 'hidden lg:flex' : 'flex'}`}>
+        <section
+          aria-label={title}
+          className={`min-w-0 flex-1 flex-col ${!selected ? 'flex' : expanded ? 'hidden' : 'hidden lg:flex'}`}
+        >
           <MobileHeader title={titleNode} subtitle={subtitle} />
           <div className={`mx-auto hidden w-full shrink-0 px-7 pt-[30px] md:block ${maxWidth}`}>
             <ViewHeader title={titleNode} subtitle={subtitle} actions={membersAction ?? trashAction} />
@@ -199,10 +207,12 @@ export function TaskWorkspace({
           </div>
         </section>
         {selected && (
-          <aside className="flex w-full animate-screen-in flex-col bg-surface lg:w-[400px] lg:shrink-0 lg:animate-panel-in lg:border-l lg:border-line">
+          <aside
+            className={`flex w-full animate-screen-in flex-col bg-surface lg:shrink-0 lg:animate-panel-in lg:border-l lg:border-line lg:transition-[width] lg:duration-[280ms] lg:ease-[cubic-bezier(.2,.8,.2,1)] ${expanded ? 'lg:w-full' : 'lg:w-[400px]'}`}
+          >
             <TaskDetail
               key={selected.id} task={selected} lists={lists} folders={folders} members={members} currentUserId={currentUserId}
-              today={today} now={now} timezone={timezone}
+              today={today} now={now} timezone={timezone} expanded={expanded} onToggleExpanded={toggleExpanded}
             />
           </aside>
         )}
