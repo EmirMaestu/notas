@@ -1,6 +1,8 @@
 'use client';
 
-import { ArrowLeft, Bell, Calendar, Clock, Flag, List as ListIcon, RotateCcw, Sparkles, Trash2, User, X } from 'lucide-react';
+import {
+  ArrowLeft, Bell, Calendar, Clock, Flag, List as ListIcon, Maximize2, Minimize2, RotateCcw, Sparkles, Trash2, User, X,
+} from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from 'react';
 import { isValidIsoDate, isValidTime } from '@/core/dates';
@@ -14,6 +16,7 @@ import { createdViaClient, formatAgo, formatDetailDate, formatShortDate, localTi
 import { useSyncedField } from '@/lib/synced-field';
 import { moveTaskAction, restoreTaskAction, toggleTaskAction, updateTaskAction } from '@/app/app/actions';
 import { Avatar } from './avatar';
+import { MarkdownEditor } from './markdown-editor';
 import { useShell } from './app-shell';
 import { PriorityCheckbox } from './priority-checkbox';
 import { PrioritySelect } from './priority-select';
@@ -64,10 +67,12 @@ function useAutoGrow(ref: React.RefObject<HTMLTextAreaElement | null>, value: st
 }
 
 export function TaskDetail({
-  task, lists, folders, members, currentUserId, today, now, timezone,
+  task, lists, folders, members, currentUserId, today, now, timezone, expanded = false, onToggleExpanded,
 }: {
   task: TaskWithDetails; lists: ListWithRole[]; folders: Folder[]; members: ListMember[]; currentUserId: string;
   today: string; now: string; timezone: string;
+  /** Panel a pantalla completa (solo en escritorio): ocupa el lugar de la lista de tareas. */
+  expanded?: boolean; onToggleExpanded?: () => void;
 }) {
   const inTrash = task.deletedAt !== null;
   const pathname = usePathname();
@@ -85,9 +90,7 @@ export function TaskDetail({
   const [saving, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
-  const descriptionRef = useRef<HTMLTextAreaElement>(null);
   useAutoGrow(titleRef, title);
-  useAutoGrow(descriptionRef, description);
 
   useEffect(() => setDate(task.dueDate ?? ''), [task.dueDate]);
   useEffect(() => setTime(task.dueTime ?? ''), [task.dueTime]);
@@ -105,18 +108,20 @@ export function TaskDetail({
   }, [consumeEditTitle]);
 
   // Esc cierra el detalle (guardando antes el campo que se estaba editando) y devuelve el foco a la fila.
+  // A pantalla completa, el primer Esc solo vuelve al tamaño normal.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('[aria-modal="true"]')) return;
       const active = document.activeElement;
-      if (active instanceof HTMLElement && rootRef.current?.contains(active) && active.matches('input, textarea, select')) {
+      if (active instanceof HTMLElement && rootRef.current?.contains(active) && (active.isContentEditable || active.matches('input, textarea, select'))) {
         active.blur();
       }
-      closeDetail();
+      if (expanded && onToggleExpanded) onToggleExpanded();
+      else closeDetail();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [closeDetail]);
+  }, [closeDetail, expanded, onToggleExpanded]);
 
   const run = (fn: () => Promise<ActionResult<unknown>>, after?: () => void, onFail?: () => void) =>
     startTransition(async () => {
@@ -162,11 +167,11 @@ export function TaskDetail({
     titleBase.current = clean;
     save({ title: clean }, () => { titleBase.current = previous; setTitle(previous); });
   }
-  function saveDescription() {
-    if (description === descriptionBase.current) return;
+  function saveDescription(next: string = description) {
+    if (next === descriptionBase.current) return;
     const previous = descriptionBase.current;
-    descriptionBase.current = description;
-    save({ description }, () => { descriptionBase.current = previous; setDescription(previous); });
+    descriptionBase.current = next;
+    save({ description: next }, () => { descriptionBase.current = previous; setDescription(previous); });
   }
   function move(newListId: string) {
     setListId(newListId);
@@ -221,6 +226,19 @@ export function TaskDetail({
           <span className="sr-only">, {createdWhen}</span>
         </span>
       )}
+      {onToggleExpanded && (
+        // Solo en escritorio: en pantallas chicas el detalle ya ocupa todo el ancho.
+        <span className="hidden lg:flex">
+          <button
+            type="button" onClick={onToggleExpanded} aria-pressed={expanded}
+            aria-label={expanded ? 'Volver al tamaño normal' : 'Pantalla completa'}
+            title={expanded ? 'Volver al tamaño normal (Esc)' : 'Pantalla completa'}
+            className={`${btn.icon} h-9 w-9`}
+          >
+            {expanded ? <Minimize2 size={17} aria-hidden="true" /> : <Maximize2 size={17} aria-hidden="true" />}
+          </button>
+        </span>
+      )}
     </div>
   );
   const errorBox = error && (
@@ -267,109 +285,111 @@ export function TaskDetail({
     <div ref={rootRef} className="flex h-full flex-col">
       {header}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-[22px] overflow-y-auto px-[22px] pb-6 pt-[22px]">
-        <div className="flex items-start gap-3.5">
-          <PriorityCheckbox
-            size="lg" checked={done} priority={priority} onChange={() => run(() => toggleTaskAction(task.id, !done))}
-            label={done ? 'Marcar esta tarea como pendiente' : 'Completar esta tarea'}
-          />
-          <textarea
-            ref={titleRef} rows={1} value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Título"
-            onBlur={saveTitle}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
-            className={`min-w-0 flex-1 resize-none bg-transparent text-title outline-none [field-sizing:content] focus-visible:outline-none ${done ? 'text-muted line-through' : ''}`}
-          />
-        </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div
+          className={`mx-auto flex w-full flex-col gap-[22px] px-[22px] pb-6 pt-[22px] ${expanded ? 'max-w-[820px] lg:px-10 lg:pt-10' : ''}`}
+        >
+          <div className="flex items-start gap-3.5">
+            <PriorityCheckbox
+              size="lg" checked={done} priority={priority} onChange={() => run(() => toggleTaskAction(task.id, !done))}
+              label={done ? 'Marcar esta tarea como pendiente' : 'Completar esta tarea'}
+            />
+            <textarea
+              ref={titleRef} rows={1} value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Título"
+              onBlur={saveTitle}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+              className={`min-w-0 flex-1 resize-none bg-transparent text-title outline-none [field-sizing:content] focus-visible:outline-none ${done ? 'text-muted line-through' : ''}`}
+            />
+          </div>
 
-        <dl className="grid grid-cols-[110px_minmax(0,1fr)] items-center gap-y-1 text-body-sm">
-          <dt className={PROP_LABEL}><Calendar size={15} aria-hidden="true" />Fecha</dt>
-          <dd className="flex min-h-9 flex-wrap items-center gap-1.5">
-            <label className={`${PILL} ${dateTone}`}>
-              <span aria-hidden="true">{shownDate ? formatDetailDate(shownDate, today) : 'Sin fecha'}</span>
-              <input
-                type="date" value={date} aria-label="Fecha" className={OVERLAY} onClick={openPicker}
-                onChange={(e) => { setDate(e.target.value); commitDate(e.target, false); }}
-                onBlur={(e) => commitDate(e.target, true)}
-              />
-            </label>
-            {task.dueDate && (
-              <label className={`${PILL} text-fg`}>
-                <Clock size={13} strokeWidth={2.2} aria-hidden="true" className="text-muted" />
-                <span aria-hidden="true" className={shownTime ? '' : 'font-medium text-muted'}>{shownTime ?? 'Agregar hora'}</span>
+          <dl className="grid grid-cols-[110px_minmax(0,1fr)] items-center gap-y-1 text-body-sm">
+            <dt className={PROP_LABEL}><Calendar size={15} aria-hidden="true" />Fecha</dt>
+            <dd className="flex min-h-9 flex-wrap items-center gap-1.5">
+              <label className={`${PILL} ${dateTone}`}>
+                <span aria-hidden="true">{shownDate ? formatDetailDate(shownDate, today) : 'Sin fecha'}</span>
                 <input
-                  type="time" value={time} aria-label="Hora" className={OVERLAY} onClick={openPicker}
-                  onChange={(e) => { setTime(e.target.value); commitTime(e.target, false); }}
-                  onBlur={(e) => commitTime(e.target, true)}
+                  type="date" value={date} aria-label="Fecha" className={OVERLAY} onClick={openPicker}
+                  onChange={(e) => { setDate(e.target.value); commitDate(e.target, false); }}
+                  onBlur={(e) => commitDate(e.target, true)}
                 />
               </label>
+              {task.dueDate && (
+                <label className={`${PILL} text-fg`}>
+                  <Clock size={13} strokeWidth={2.2} aria-hidden="true" className="text-muted" />
+                  <span aria-hidden="true" className={shownTime ? '' : 'font-medium text-muted'}>{shownTime ?? 'Agregar hora'}</span>
+                  <input
+                    type="time" value={time} aria-label="Hora" className={OVERLAY} onClick={openPicker}
+                    onChange={(e) => { setTime(e.target.value); commitTime(e.target, false); }}
+                    onBlur={(e) => commitTime(e.target, true)}
+                  />
+                </label>
+              )}
+            </dd>
+
+            <dt className={PROP_LABEL}><Bell size={15} aria-hidden="true" />Recordatorio</dt>
+            <dd className="flex min-h-9 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <SelectPill
+                label="Recordatorio" value={reminder} onChange={changeReminder} disabled={!task.dueDate}
+                leadingInset="flag" leading={<Bell size={13} className={reminder ? 'text-accent' : 'text-muted'} />}
+              >
+                <option value="">Sin recordatorio</option>
+                {reminderChoices.map((o) => <option key={o} value={o}>{reminderLabel(o, user.allDayReminderTime)}</option>)}
+              </SelectPill>
+              {!task.dueDate && <span className="text-meta text-muted">Poné una fecha para usar recordatorios</span>}
+            </dd>
+
+            <dt className={PROP_LABEL}><Flag size={15} aria-hidden="true" />Prioridad</dt>
+            <dd className="flex min-h-9 items-center">
+              <PrioritySelect
+                value={priority}
+                onChange={(p) => { setPriority(p); save({ priority: p }, () => setPriority(task.priority)); }}
+              />
+            </dd>
+
+            <dt className={PROP_LABEL}><ListIcon size={15} aria-hidden="true" />Lista</dt>
+            <dd className="flex min-h-9 min-w-0 items-center">
+              <SelectPill
+                label="Lista" value={listId} onChange={move} leadingInset="dot"
+                leading={<span className="h-2 w-2 rounded-full" style={{ backgroundColor: currentList?.color ?? 'var(--muted)' }} />}
+              >
+                {groupListsByFolder(lists, folders).map((g) => {
+                  // El select cerrado muestra la opción elegida: con `label` se lee «Carpeta › Lista» en la píldora, y abierto cada lista sigue bajo el título de su carpeta.
+                  const options = g.lists.map((l) => (
+                    <option key={l.id} value={l.id} label={l.id === listId ? currentListName : undefined}>{l.name}</option>
+                  ));
+                  return g.label === null ? options : <optgroup key={g.label} label={g.label}>{options}</optgroup>;
+                })}
+              </SelectPill>
+            </dd>
+
+            {members.length > 0 && (
+              <>
+                <dt className={PROP_LABEL}><User size={15} aria-hidden="true" />Asignada a</dt>
+                <dd className="flex min-h-9 min-w-0 items-center">
+                  <SelectPill
+                    label="Asignada a" value={assigneeId} onChange={assign}
+                    leadingInset={assignee ? 'avatar' : 'flag'}
+                    leading={assignee ? <Avatar person={assignee} size={20} /> : <User size={13} className="text-muted" />}
+                  >
+                    <option value="">Sin asignar</option>
+                    {members.map((m) => <option key={m.id} value={m.id}>{m.name || m.email}</option>)}
+                  </SelectPill>
+                </dd>
+              </>
             )}
-          </dd>
+          </dl>
 
-          <dt className={PROP_LABEL}><Bell size={15} aria-hidden="true" />Recordatorio</dt>
-          <dd className="flex min-h-9 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <SelectPill
-              label="Recordatorio" value={reminder} onChange={changeReminder} disabled={!task.dueDate}
-              leadingInset="flag" leading={<Bell size={13} className={reminder ? 'text-accent' : 'text-muted'} />}
-            >
-              <option value="">Sin recordatorio</option>
-              {reminderChoices.map((o) => <option key={o} value={o}>{reminderLabel(o, user.allDayReminderTime)}</option>)}
-            </SelectPill>
-            {!task.dueDate && <span className="text-meta text-muted">Poné una fecha para usar recordatorios</span>}
-          </dd>
+          <MarkdownEditor
+            value={description} onChange={setDescription} onBlur={saveDescription} label="Descripción"
+            placeholder="Agregar una descripción… (admite Markdown)" minHeight={expanded ? '40vh' : undefined}
+          />
 
-          <dt className={PROP_LABEL}><Flag size={15} aria-hidden="true" />Prioridad</dt>
-          <dd className="flex min-h-9 items-center">
-            <PrioritySelect
-              value={priority}
-              onChange={(p) => { setPriority(p); save({ priority: p }, () => setPriority(task.priority)); }}
-            />
-          </dd>
+          <SubtaskList task={task} onError={setError} />
 
-          <dt className={PROP_LABEL}><ListIcon size={15} aria-hidden="true" />Lista</dt>
-          <dd className="flex min-h-9 min-w-0 items-center">
-            <SelectPill
-              label="Lista" value={listId} onChange={move} leadingInset="dot"
-              leading={<span className="h-2 w-2 rounded-full" style={{ backgroundColor: currentList?.color ?? 'var(--muted)' }} />}
-            >
-              {groupListsByFolder(lists, folders).map((g) => {
-                // El select cerrado muestra la opción elegida: con `label` se lee «Carpeta › Lista» en la píldora, y abierto cada lista sigue bajo el título de su carpeta.
-                const options = g.lists.map((l) => (
-                  <option key={l.id} value={l.id} label={l.id === listId ? currentListName : undefined}>{l.name}</option>
-                ));
-                return g.label === null ? options : <optgroup key={g.label} label={g.label}>{options}</optgroup>;
-              })}
-            </SelectPill>
-          </dd>
+          <TagEditor tags={task.tags} otherTags={task.otherTags} onChange={(tags, onFail) => save({ tags }, onFail)} />
 
-          {members.length > 0 && (
-            <>
-              <dt className={PROP_LABEL}><User size={15} aria-hidden="true" />Asignada a</dt>
-              <dd className="flex min-h-9 min-w-0 items-center">
-                <SelectPill
-                  label="Asignada a" value={assigneeId} onChange={assign}
-                  leadingInset={assignee ? 'avatar' : 'flag'}
-                  leading={assignee ? <Avatar person={assignee} size={20} /> : <User size={13} className="text-muted" />}
-                >
-                  <option value="">Sin asignar</option>
-                  {members.map((m) => <option key={m.id} value={m.id}>{m.name || m.email}</option>)}
-                </SelectPill>
-              </dd>
-            </>
-          )}
-        </dl>
-
-        <textarea
-          ref={descriptionRef} value={description} onChange={(e) => setDescription(e.target.value)} aria-label="Descripción"
-          onBlur={saveDescription}
-          placeholder="Agregar una descripción…" rows={2}
-          className="min-h-[3.2em] w-full shrink-0 resize-none bg-transparent text-body leading-[1.6] text-fg outline-none [field-sizing:content] placeholder:text-muted focus-visible:outline-none"
-        />
-
-        <SubtaskList task={task} onError={setError} />
-
-        <TagEditor tags={task.tags} otherTags={task.otherTags} onChange={(tags, onFail) => save({ tags }, onFail)} />
-
-        {errorBox}
+          {errorBox}
+        </div>
       </div>
 
       <div className="flex shrink-0 items-center justify-between gap-3 border-t border-line px-4 py-3">
